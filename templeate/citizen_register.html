@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citizen Registration - Smart Waste</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-panel { background: rgba(30,41,59,0.85); backdrop-filter: blur(10px); border: 1px solid rgba(148,163,184,0.12); }
+    </style>
+</head>
+<body class="bg-slate-900 min-h-screen flex items-center justify-center text-slate-100">
+
+    <div class="glass-panel w-full max-w-md p-8 rounded-2xl shadow-2xl mx-4 border-t-4 border-blue-500">
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold">Citizen Registration</h2>
+            <p class="text-sm text-slate-400 mt-1">Create an account to monitor bins & report issues</p>
+        </div>
+
+        {% if error %}
+        <div style="background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); padding:10px 16px; border-radius:8px; margin-bottom:12px; font-size:13px; text-align:center; width:100%;">
+            <i class="fa-solid fa-circle-exclamation" style="margin-right:6px;"></i>{{ error }}
+        </div>
+        {% endif %}
+        
+        <form id="registerForm" class="space-y-4" action="/register/citizen" method="post">
+            <div>
+                <label class="block text-sm text-slate-300 mb-1">Full Name</label>
+                <input type="text" id="name" name="name" required class="w-full py-3 px-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" placeholder="e.g. Rahul Sharma">
+            </div>
+
+            <div>
+                <label class="block text-sm text-slate-300 mb-1">Mobile Number</label>
+                <input type="tel" id="mobile" name="mobile" pattern="[0-9]{10}" required class="w-full py-3 px-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" placeholder="e.g. 9876543210">
+            </div>
+
+            <div>
+                <label class="block text-sm text-slate-300 mb-1">Select Zone</label>
+                <select id="zone" name="zone" required class="w-full py-3 px-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100">
+                    <option value="">-- Select Zone --</option>
+                    <option value="1">Zone 1</option>
+                    <option value="2">Zone 2</option>
+                    <option value="3">Zone 3</option>
+                    <option value="4">Zone 4</option>
+                    <option value="5">Zone 5</option>
+                    <option value="6">Zone 6</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm text-slate-300 mb-1">Password</label>
+                <input type="password" id="password" name="password" required class="w-full py-3 px-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" placeholder="Create a password">
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-bold">Register</button>
+            </div>
+        </form>
+
+        <p class="text-xs text-slate-400 mt-4 text-center">Already have an account? <a href="/" class="text-blue-400 underline">Sign in</a></p>
+    </div>
+
+</body>
+</html>

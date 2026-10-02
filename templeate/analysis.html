@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SilentStorm - Analysis & AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        .sidebar-gradient {
+            background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 font-sans text-slate-100 h-screen overflow-hidden flex">
+
+    <aside class="w-64 sidebar-gradient text-white flex flex-col flex-shrink-0 transition-all duration-300 z-20 shadow-xl border-r border-slate-800">
+        
+        <div class="p-6 border-b border-slate-800 bg-slate-900/50">
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=3b82f6&color=fff" alt="Admin" class="w-12 h-12 rounded-full border-2 border-green-500">
+                    <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-slate-900 rounded-full"></span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-white">Amravati Corp.</h3>
+                    <p class="text-xs text-slate-400">Super Admin</p>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-2">
+            
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Management</div>
+            
+            <a href="/admindashboard" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-chart-line text-lg"></i>
+                <span class="font-medium">Dashboard</span>
+            </a>
+
+            <a href="/bins" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-trash-can text-lg"></i>
+                <span class="font-medium">Bins Management</span>
+            </a>
+
+            <a href="/addbins" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-plus text-lg text-green-400 group-hover:text-green-300"></i>
+                <span class="font-medium">Add New Bin</span>
+            </a>
+
+            <a href="/removebins" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-ban text-lg text-red-400 group-hover:text-red-300"></i>
+                <span class="font-medium">Remove Bin</span>
+            </a>
+
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-2 px-3">Intelligence</div>
+
+            <a href="/analysis" class="flex items-center gap-3 px-4 py-3 bg-blue-600 rounded-lg text-white shadow-lg shadow-blue-900/20 hover:bg-blue-500 transition-all group">
+                <i class="fa-solid fa-brain text-lg"></i>
+                <span class="font-medium">Analysis & AI</span>
+            </a>
+
+            <a href="/alerts" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <div class="relative">
+                    <i class="fa-solid fa-bell text-lg text-yellow-400 group-hover:text-yellow-300"></i>
+                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                </div>
+                <span class="font-medium">Alerts</span>
+            </a>
+
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-2 px-3">System</div>
+
+            <a href="/settings" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-gear text-lg text-slate-400 group-hover:text-white"></i>
+                <span class="font-medium">Settings</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <a href="/" class="flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-slate-800 hover:text-red-300 rounded-lg transition-all">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="font-medium">Log Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        
+        <header class="h-20 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-8 z-10 shadow-sm">
+            
+            <div class="flex items-center gap-4">
+                <a href="/admindashboard" class="text-slate-400 hover:text-slate-200 transition">
+                    <i class="fa-solid fa-chevron-left text-lg"></i>
+                </a>
+                <h1 class="text-2xl font-bold text-white">
+                    <span class="text-purple-500"><i class="fa-solid fa-brain mr-2"></i>Analysis & AI</span>
+                </h1>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button class="p-3 rounded-full bg-slate-700 text-blue-400 hover:bg-slate-600 transition-colors" title="Refresh Data">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
+                <div class="h-8 w-px bg-slate-700"></div>
+                <button class="bg-purple-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-md hover:bg-purple-500 transition-transform active:scale-95">
+                    <i class="fa-solid fa-download mr-2"></i> Export Report
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 bg-slate-900">
+            
+            <!-- Time Period Selection -->
+            <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6 mb-8">
+                <h3 class="font-bold text-white text-lg mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-calendar text-purple-500"></i> Select Analysis Period
+                </h3>
+                <div class="flex gap-4 flex-wrap">
+                    <button class="px-6 py-2.5 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-500 transition" data-period="week">
+                        <i class="fa-solid fa-calendar-week mr-2"></i> This Week
+                    </button>
+                    <button class="px-6 py-2.5 rounded-lg bg-slate-700 text-slate-300 font-semibold hover:bg-slate-600 transition" data-period="month">
+                        <i class="fa-solid fa-calendar-days mr-2"></i> This Month
+                    </button>
+                    <button class="px-6 py-2.5 rounded-lg bg-slate-700 text-slate-300 font-semibold hover:bg-slate-600 transition" data-period="year">
+                        <i class="fa-solid fa-calendar mr-2"></i> This Year
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bin Selection -->
+            <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6 mb-8">
+                <h3 class="font-bold text-white text-lg mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-trash-can text-blue-500"></i> Select Bin for Analysis
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <select id="binSelect" class="px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        <option value="">-- Select a Bin --</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Selected Bin Info & Charts -->
+            <div id="analysisContent" class="hidden">
+                <!-- Bin Details Card -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-blue-900/20 border border-blue-700/50 rounded-2xl p-6">
+                        <h4 class="text-blue-300 text-sm font-semibold mb-2">Bin ID</h4>
+                        <p class="text-2xl font-bold text-white" id="binIdDisplay">-</p>
+                    </div>
+                    <div class="bg-green-900/20 border border-green-700/50 rounded-2xl p-6">
+                        <h4 class="text-green-300 text-sm font-semibold mb-2">Location</h4>
+                        <p class="text-lg font-bold text-white" id="binLocationDisplay">-</p>
+                    </div>
+                    <div class="bg-orange-900/20 border border-orange-700/50 rounded-2xl p-6">
+                        <h4 class="text-orange-300 text-sm font-semibold mb-2">Collections</h4>
+                        <p class="text-2xl font-bold text-white" id="collectionsDisplay">0</p>
+                    </div>
+                    <div class="bg-purple-900/20 border border-purple-700/50 rounded-2xl p-6">
+                        <h4 class="text-purple-300 text-sm font-semibold mb-2">Avg. Full Level</h4>
+                        <p class="text-2xl font-bold text-white" id="avgLevelDisplay">0%</p>
+                    </div>
+                </div>
+
+                <!-- Charts Row 1 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- Fill Level Over Time Chart -->
+                    <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6">
+                        <h3 class="font-bold text-white text-lg mb-4">
+                            <i class="fa-solid fa-chart-line text-blue-500 mr-2"></i> Fill Level Over Time
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="fillLevelChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Collection Frequency Chart -->
+                    <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6">
+                        <h3 class="font-bold text-white text-lg mb-4">
+                            <i class="fa-solid fa-chart-bar text-green-500 mr-2"></i> Collection Frequency
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="collectionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row 2 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Waste Accumulation Trend -->
+                    <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6">
+                        <h3 class="font-bold text-white text-lg mb-4">
+                            <i class="fa-solid fa-chart-area text-orange-500 mr-2"></i> Waste Accumulation Trend
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="wasteAccumulationChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Table -->
+                    <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6">
+                        <h3 class="font-bold text-white text-lg mb-4">
+                            <i class="fa-solid fa-list text-purple-500 mr-2"></i> Detailed Statistics
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center py-2 border-b border-slate-700/50">
+                                <span class="text-slate-400">Total Collections</span>
+                                <span class="font-bold text-blue-400" id="statCollections">0</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-slate-700/50">
+                                <span class="text-slate-400">Average Fill Level</span>
+                                <span class="font-bold text-green-400" id="statAvgFill">0%</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-slate-700/50">
+                                <span class="text-slate-400">Max Fill Level</span>
+                                <span class="font-bold text-red-400" id="statMaxFill">0%</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-slate-700/50">
+                                <span class="text-slate-400">Min Fill Level</span>
+                                <span class="font-bold text-green-400" id="statMinFill">0%</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2">
+                                <span class="text-slate-400">Avg Collection Days</span>
+                                <span class="font-bold text-purple-400" id="statAvgDays">0 days</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- No Selection Message -->
+            <div id="noSelectionMessage" class="bg-slate-800 rounded-2xl border border-slate-700 p-16 text-center">
+                <i class="fa-solid fa-magnifying-glass text-6xl text-slate-600 mb-4"></i>
+                <h3 class="text-xl font-bold text-slate-400 mb-2">Select a Bin to View Analysis</h3>
+                <p class="text-slate-500">Choose a bin from the dropdown above to see detailed waste collection analytics and insights.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Sample bins data with historical collection data
+        const binsDataAnalysis = [
+            {
+                id: 'BIN-001',
+                location: 'Rajapeth Market',
+                severity: 'critical',
+                weekData: [
+                    { day: 'Mon', fillLevel: 45, collections: 0 },
+                    { day: 'Tue', fillLevel: 65, collections: 1 },
+                    { day: 'Wed', fillLevel: 78, collections: 1 },
+                    { day: 'Thu', fillLevel: 92, collections: 1 },
+                    { day: 'Fri', fillLevel: 88, collections: 0 },
+                    { day: 'Sat', fillLevel: 98, collections: 1 },
+                    { day: 'Sun', fillLevel: 42, collections: 1 },
+                ],
+                monthData: [
+                    { date: 'Week 1', fillLevel: 65, collections: 3 },
+                    { date: 'Week 2', fillLevel: 72, collections: 3 },
+                    { date: 'Week 3', fillLevel: 78, collections: 4 },
+                    { date: 'Week 4', fillLevel: 82, collections: 3 },
+                ],
+                yearData: [
+                    { month: 'Jan', fillLevel: 68, collections: 12 },
+                    { month: 'Feb', fillLevel: 72, collections: 13 },
+                    { month: 'Mar', fillLevel: 75, collections: 14 },
+                    { month: 'Apr', fillLevel: 70, collections: 12 },
+                    { month: 'May', fillLevel: 78, collections: 15 },
+                    { month: 'Jun', fillLevel: 82, collections: 14 },
+                ],
+            },
+            {
+                id: 'BIN-002',
+                location: 'Gandhi Square',
+                severity: 'critical',
+                weekData: [
+                    { day: 'Mon', fillLevel: 50, collections: 0 },
+                    { day: 'Tue', fillLevel: 68, collections: 1 },
+                    { day: 'Wed', fillLevel: 75, collections: 1 },
+                    { day: 'Thu', fillLevel: 88, collections: 1 },
+                    { day: 'Fri', fillLevel: 92, collections: 1 },
+                    { day: 'Sat', fillLevel: 95, collections: 1 },
+                    { day: 'Sun', fillLevel: 38, collections: 1 },
+                ],
+                monthData: [
+                    { date: 'Week 1', fillLevel: 70, collections: 3 },
+                    { date: 'Week 2', fillLevel: 75, collections: 3 },
+                    { date: 'Week 3', fillLevel: 80, collections: 4 },
+                    { date: 'Week 4', fillLevel: 85, collections: 3 },
+                ],
+                yearData: [
+                    { month: 'Jan', fillLevel: 72, collections: 13 },
+                    { month: 'Feb', fillLevel: 75, collections: 14 },
+                    { month: 'Mar', fillLevel: 78, collections: 15 },
+                    { month: 'Apr', fillLevel: 73, collections: 13 },
+                    { month: 'May', fillLevel: 80, collections: 16 },
+                    { month: 'Jun', fillLevel: 85, collections: 15 },
+                ],
+            },
+            {
+                id: 'BIN-003',
+                location: 'Main Market Zone 1',
+                severity: 'warning',
+                weekData: [
+                    { day: 'Mon', fillLevel: 35, collections: 0 },
+                    { day: 'Tue', fillLevel: 52, collections: 1 },
+                    { day: 'Wed', fillLevel: 68, collections: 1 },
+                    { day: 'Thu', fillLevel: 78, collections: 1 },
+                    { day: 'Fri', fillLevel: 85, collections: 1 },
+                    { day: 'Sat', fillLevel: 88, collections: 0 },
+                    { day: 'Sun', fillLevel: 32, collections: 1 },
+                ],
+                monthData: [
+                    { date: 'Week 1', fillLevel: 58, collections: 3 },
+                    { date: 'Week 2', fillLevel: 65, collections: 3 },
+                    { date: 'Week 3', fillLevel: 72, collections: 4 },
+                    { date: 'Week 4', fillLevel: 75, collections: 3 },
+                ],
+                yearData: [
+                    { month: 'Jan', fillLevel: 62, collections: 11 },
+                    { month: 'Feb', fillLevel: 65, collections: 12 },
+                    { month: 'Mar', fillLevel: 68, collections: 13 },
+                    { month: 'Apr', fillLevel: 64, collections: 11 },
+                    { month: 'May', fillLevel: 72, collections: 14 },
+                    { month: 'Jun', fillLevel: 75, collections: 13 },
+                ],
+            },
+            {
+                id: 'BIN-004',
+                location: 'Bus Stand Zone 2',
+                severity: 'critical',
+                weekData: [
+                    { day: 'Mon', fillLevel: 48, collections: 0 },
+                    { day: 'Tue', fillLevel: 62, collections: 1 },
+                    { day: 'Wed', fillLevel: 76, collections: 1 },
+                    { day: 'Thu', fillLevel: 90, collections: 1 },
+                    { day: 'Fri', fillLevel: 92, collections: 0 },
+                    { day: 'Sat', fillLevel: 95, collections: 1 },
+                    { day: 'Sun', fillLevel: 40, collections: 1 },
+                ],
+                monthData: [
+                    { date: 'Week 1', fillLevel: 68, collections: 3 },
+                    { date: 'Week 2', fillLevel: 73, collections: 3 },
+                    { date: 'Week 3', fillLevel: 79, collections: 4 },
+                    { date: 'Week 4', fillLevel: 83, collections: 3 },
+                ],
+                yearData: [
+                    { month: 'Jan', fillLevel: 69, collections: 13 },
+                    { month: 'Feb', fillLevel: 73, collections: 14 },
+                    { month: 'Mar', fillLevel: 76, collections: 15 },
+                    { month: 'Apr', fillLevel: 71, collections: 13 },
+                    { month: 'May', fillLevel: 79, collections: 16 },
+                    { month: 'Jun', fillLevel: 83, collections: 14 },
+                ],
+            },
+        ];
+
+        let currentBin = null;
+        let currentPeriod = 'week';
+        let charts = {};
+
+        // Populate bin selection dropdown
+        function populateBinSelector() {
+            const select = document.getElementById('binSelect');
+            binsDataAnalysis.forEach(bin => {
+                const option = document.createElement('option');
+                option.value = bin.id;
+                option.textContent = `${bin.id} - ${bin.location}`;
+                select.appendChild(option);
+            });
+        }
+
+        // Get data based on period
+        function getAnalysisData(period) {
+            if (!currentBin) return null;
+            if (period === 'week') return currentBin.weekData;
+            if (period === 'month') return currentBin.monthData;
+            if (period === 'year') return currentBin.yearData;
+        }
+
+        // Update analysis charts
+        function updateCharts() {
+            if (!currentBin) return;
+
+            const data = getAnalysisData(currentPeriod);
+            if (!data) return;
+
+            const labels = data.map(d => d.day || d.date || d.month);
+            const fillLevels = data.map(d => d.fillLevel);
+            const collections = data.map(d => d.collections);
+
+            // Fill Level Chart
+            if (charts.fillLevel) charts.fillLevel.destroy();
+            const fillCtx = document.getElementById('fillLevelChart').getContext('2d');
+            charts.fillLevel = new Chart(fillCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Fill Level %',
+                        data: fillLevels,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#fff',
+                        pointRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e2e8f0' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { color: '#cbd5e1' },
+                            grid: { color: '#334155' },
+                            max: 100
+                        },
+                        x: {
+                            ticks: { color: '#cbd5e1' },
+                            grid: { color: '#334155' }
+                        }
+                    }
+                }
+            });
+
+            // Collection Frequency Chart
+            if (charts.collection) charts.collection.destroy();
+            const collCtx = document.getElementById('collectionChart').getContext('2d');
+            charts.collection = new Chart(collCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Collections',
+                        data: collections,
+                        backgroundColor: '#10b981',
+                        borderColor: '#059669',
+                        borderWidth: 1,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e2e8f0' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { color: '#cbd5e1' },
+                            grid: { color: '#334155' },
+                            beginAtZero: true
+                        },
+                        x: {
+                            ticks: { color: '#cbd5e1' },
+                            grid: { color: '#334155' }
+                        }
+                    }
+                }
+            });
+
+            // Waste Accumulation Chart
+            if (charts.accumulation) charts.accumulation.destroy();
+            const accCtx = document.getElementById('wasteAccumulationChart').getContext('2d');
+            charts.accumulation = new Chart(accCtx, {
+                type: 'area',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Cumulative Fill Level',
+                        data: fillLevels,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e2e8f0' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { color: '#cbd5e1' },
+                            grid: { color: '#334155' },
+                            max: 100
+                        },
+                        x: {
+                            ticks: { color: '#cbd5e1' },
+                            grid: { color: '#334155' }
+                        }
+                    }
+                }
+            });
+
+            // Update statistics
+            const totalCollections = collections.reduce((a, b) => a + b, 0);
+            const avgFill = Math.round(fillLevels.reduce((a, b) => a + b, 0) / fillLevels.length);
+            const maxFill = Math.max(...fillLevels);
+            const minFill = Math.min(...fillLevels);
+            const avgDays = (currentPeriod === 'week') ? 3 : (currentPeriod === 'month') ? 13 : 61;
+
+            document.getElementById('statCollections').textContent = totalCollections;
+            document.getElementById('statAvgFill').textContent = avgFill + '%';
+            document.getElementById('statMaxFill').textContent = maxFill + '%';
+            document.getElementById('statMinFill').textContent = minFill + '%';
+            document.getElementById('statAvgDays').textContent = avgDays + ' days';
+
+            // Update header stats
+            document.getElementById('collectionsDisplay').textContent = totalCollections;
+            document.getElementById('avgLevelDisplay').textContent = avgFill + '%';
+        }
+
+        // Bin selection change
+        document.getElementById('binSelect').addEventListener('change', function() {
+            if (!this.value) {
+                currentBin = null;
+                document.getElementById('analysisContent').classList.add('hidden');
+                document.getElementById('noSelectionMessage').classList.remove('hidden');
+                return;
+            }
+
+            currentBin = binsDataAnalysis.find(b => b.id === this.value);
+            document.getElementById('binIdDisplay').textContent = currentBin.id;
+            document.getElementById('binLocationDisplay').textContent = currentBin.location;
+
+            document.getElementById('analysisContent').classList.remove('hidden');
+            document.getElementById('noSelectionMessage').classList.add('hidden');
+
+            updateCharts();
+        });
+
+        // Period selection
+        document.querySelectorAll('[data-period]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-period]').forEach(b => {
+                    b.classList.remove('bg-purple-600');
+                    b.classList.add('bg-slate-700', 'text-slate-300');
+                });
+                this.classList.remove('bg-slate-700', 'text-slate-300');
+                this.classList.add('bg-purple-600', 'text-white');
+
+                currentPeriod = this.getAttribute('data-period');
+                if (currentBin) {
+                    updateCharts();
+                }
+            });
+        });
+
+        // Initialize
+        populateBinSelector();
+    </script>
+</body>
+</html>

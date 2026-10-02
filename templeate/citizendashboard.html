@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SilentStorm - Citizen Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- QR Code Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        .sidebar-gradient { background: linear-gradient(180deg, #0f172a 0%, #020617 100%); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-900 font-sans text-slate-100 h-screen overflow-hidden flex">
+
+    <aside class="w-64 sidebar-gradient text-white flex flex-col flex-shrink-0 transition-all duration-300 z-20 shadow-xl border-r border-slate-800">
+        <div class="p-6 border-b border-slate-800 bg-slate-900/50">
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <img src="https://ui-avatars.com/api/?name=Citizen&background=3b82f6&color=fff" class="w-12 h-12 rounded-full border-2 border-blue-500">
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-white">Citizen Portal</h3>
+                    <p class="text-xs text-slate-400">Zone {{ user.zone if user else '1' }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-2">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Home</div>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 bg-blue-600 rounded-lg text-white shadow-lg shadow-blue-900/20">
+                <i class="fa-solid fa-house text-lg"></i>
+                <span class="font-medium">Dashboard</span>
+            </a>
+
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-2 px-3">Action</div>
+            <button onclick="openScanner()" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-qrcode text-lg text-green-400 group-hover:text-green-300"></i>
+                <span class="font-medium">Scan Bin QR</span>
+            </button>
+            <a href="/settings" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-gear text-lg text-slate-400 group-hover:text-white"></i>
+                <span class="font-medium">Settings</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <a href="/logout" class="flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-slate-800 hover:text-red-300 rounded-lg transition-all cursor-pointer">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="font-medium">Log Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <header class="h-20 bg-slate-800 border-b border-slate-700 flex items-center px-8 z-10 shadow-sm justify-between">
+            <h1 class="text-2xl font-bold text-white">My Neighborhood (Zone {{ user.zone if user else '1' }})</h1>
+            <div class="text-sm text-slate-400">Welcome, {{ user.name if user else 'User' }}</div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 bg-slate-900">
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                    <h3 class="text-slate-400 text-sm font-semibold uppercase">Bins in Zone</h3>
+                    <div class="mt-2 text-4xl font-extrabold text-white">24</div>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                    <h3 class="text-slate-400 text-sm font-semibold uppercase">Active Workers</h3>
+                    <div class="mt-2 text-4xl font-extrabold text-white">3</div>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                    <h3 class="text-slate-400 text-sm font-semibold uppercase">My Complaints</h3>
+                    <div class="mt-2 text-4xl font-extrabold text-blue-400" id="myComplaintCount">0</div>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6">
+                <h3 class="font-bold text-white text-lg mb-4">My Submitted Complaints</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-slate-400 text-xs uppercase border-b border-slate-700">
+                                <th class="py-3">Complaint ID</th>
+                                <th class="py-3">Bin ID</th>
+                                <th class="py-3">Date</th>
+                                <th class="py-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="complaintsTable" class="text-sm text-slate-200">
+                            <!-- Complaints will render here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- QR Scan Modal -->
+    <div id="qrModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 text-center">
+            <h3 class="text-lg font-bold mb-2">Scan Bin QR Code</h3>
+            <p class="text-sm text-slate-400 mb-6">Point your camera at the overflowing bin's QR code to report it immediately. The ID will fill automatically.</p>
+            
+            <div id="qr-reader" class="w-full overflow-hidden mx-auto mb-6 bg-slate-800 rounded-xl" style="min-height: 250px;">
+                <!-- Camera will render here -->
+            </div>
+
+            <form id="fakeScanForm" class="space-y-4">
+                <input type="text" id="scanBinId" placeholder="Optional: Enter Bin ID manually (e.g. BIN-X10)" class="w-full px-4 py-2 rounded bg-slate-800 border border-slate-600 focus:ring focus:ring-blue-500 text-white">
+                <div class="flex gap-4">
+                    <button type="button" onclick="closeScanner()" class="flex-1 py-2 bg-slate-700 rounded hover:bg-slate-600">Cancel</button>
+                    <button type="submit" class="flex-1 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-500">Submit Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const userZone = '{{ user.zone if user else "1" }}';
+
+        function loadComplaints() {
+            fetch('/api/complaints')
+                .then(r => r.json())
+                .then(data => {
+                    // filter to my zone
+                    const myComplaints = data.filter(c => c.bin_zone == userZone);
+                    document.getElementById('myComplaintCount').textContent = myComplaints.length;
+                    
+                    const tbody = document.getElementById('complaintsTable');
+                    tbody.innerHTML = '';
+                    myComplaints.forEach(c => {
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b border-slate-700/50";
+                        tr.innerHTML = `
+                            <td class="py-4 font-medium">${c.id}</td>
+                            <td class="py-4 text-slate-400">${c.bin_id}</td>
+                            <td class="py-4 text-slate-500">${new Date(c.timestamp).toLocaleString()}</td>
+                            <td class="py-4"><span class="px-2 py-1 rounded bg-yellow-900/40 text-yellow-400 text-xs">${c.status}</span></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        let html5QrcodeScanner = null;
+
+        function openScanner() {
+            document.getElementById('qrModal').classList.remove('hidden');
+            document.getElementById('scanBinId').value = ''; // clear previous value
+
+            // Initialize camera scanner if not running
+            if (!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5QrcodeScanner(
+                    "qr-reader", 
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    false
+                );
+                
+                html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+            }
+        }
+
+        function closeScanner() {
+            document.getElementById('qrModal').classList.add('hidden');
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear().catch(error => {
+                    console.error("Failed to clear html5QrcodeScanner. ", error);
+                });
+                html5QrcodeScanner = null; // Reset scanner instance
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Automatically fill the input field
+            document.getElementById('scanBinId').value = decodedText;
+            
+            // Provide a brief visual or audio feedback if desired (e.g., green flash or beep)
+            console.log("QR Code scanned automatically: " + decodedText);
+            
+            // You can optionally choose to automatically submit the form here:
+            // document.getElementById('fakeScanForm').dispatchEvent(new Event('submit', { cancelable: true }));
+        }
+
+        function onScanFailure(error) {
+            // handle scan failure, usually better to ignore and keep scanning
+            // console.warn(`Code scan error = ${error}`);
+        }
+
+        document.getElementById('fakeScanForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const binId = document.getElementById('scanBinId').value;
+            // binId is optional per user request, API should be fine accepting blank or undefined depending on backend setup.
+            
+            fetch('/api/citizen/scan_qr', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ bin_id: binId, bin_zone: userZone })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if(res.success) {
+                    alert('Complaint registered successfully! ID: ' + res.complaint.id);
+                    closeScanner(); // Clear camera
+                    loadComplaints();
+                }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', loadComplaints);
+    </script>
+
+    <!-- Chatbot UI -->
+    <link rel="stylesheet" href="/static/chatbot.css">
+    <div class="chatbot-wrapper">
+        <div class="ask-me-text">ASK ME</div>
+        <button class="chatbot-toggler">
+            <i class="fa-solid fa-robot"></i>
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <div class="chatbot">
+        <header>
+            <h2>Waste Management Assistant</h2>
+            <span class="close-btn cursor-pointer"><i class="fa-solid fa-xmark text-slate-400 hover:text-white"></i></span>
+        </header>
+        <ul class="chatbox list-none p-4 m-0">
+            <!-- chats render here -->
+        </ul>
+        <div class="chat-input">
+            <input type="text" placeholder="Type a message..." required>
+            <button id="send-btn"><i class="fa-solid fa-paper-plane text-sm"></i></button>
+        </div>
+    </div>
+    <script src="/static/chatbot.js"></script>
+</body>
+</html>

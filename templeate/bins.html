@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SilentStorm - Bins Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar-gradient {
+            background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<script>
+    // Try to fetch device data from the ESP/device at 10.208.174.80
+    function fetchDeviceDataFromIP() {
+        const base = 'http://10.197.28.80';
+        // Try common endpoints in order. Return a promise resolving to an object or null.
+        return fetch(base + '/get_data')
+            .then(r => r.json())
+            .catch(() => fetch(base + '/data').then(r => r.json()).catch(() => fetch(base + '/').then(r => r.text()).then(t => {
+                // try to extract a number from HTML/text response
+                const m = t.match(/(\d{1,3}(?:\.\d+)?)/);
+                return m ? { distance: parseFloat(m[1]) } : null;
+            }).catch(() => null)));
+    }
+
+    function updateLiveLevels() {
+        fetch('/api/bins')
+            .then(response => response.json())
+            .then(async data => {
+                // Update UI from backend bins list
+                const binsList = (data.bins && Array.isArray(data.bins)) ? data.bins : [];
+
+                binsList.forEach(bin => {
+                    const levelElement = document.getElementById(`fill-${bin.id}`);
+                    const progressBar = document.getElementById(`progress-${bin.id}`);
+                    const distanceElement = document.getElementById(`distance-${bin.id}`);
+
+                    if (levelElement) levelElement.innerText = bin.fillLevel + '%';
+                    if (progressBar) {
+                        progressBar.style.width = bin.fillLevel + '%';
+                        if (bin.fillLevel >= 90) progressBar.className = 'bg-red-600 h-2 rounded-full';
+                        else if (bin.fillLevel >= 70) progressBar.className = 'bg-yellow-500 h-2 rounded-full';
+                        else progressBar.className = 'bg-green-500 h-2 rounded-full';
+                    }
+                    if (distanceElement && bin.distance !== undefined) distanceElement.innerText = bin.distance + ' cm';
+                });
+
+                // Also try to fetch raw device data from the provided IP and merge results.
+                try {
+                    const deviceData = await fetchDeviceDataFromIP();
+                    if (deviceData) {
+                        // If device provides bin1/bin2 style keys, map them by index
+                        if (deviceData.bin1 !== undefined || deviceData.bin2 !== undefined || deviceData.bin3 !== undefined) {
+                            const map = { 'BIN-001': deviceData.bin1, 'BIN-002': deviceData.bin2, 'BIN-003': deviceData.bin3 };
+                            Object.keys(map).forEach(id => {
+                                const el = document.getElementById(`distance-${id}`);
+                                if (el && map[id] !== undefined) el.innerText = map[id] + ' cm';
+                            });
+                        } else if (deviceData.distance !== undefined) {
+                            // single distance value - try to apply to matching bin by sensorId or first bin
+                            const sensorBin = binsList.find(b => b.sensorId === deviceData.sensorId) || binsList[0];
+                            if (sensorBin) {
+                                const el = document.getElementById(`distance-${sensorBin.id}`);
+                                if (el) el.innerText = deviceData.distance + ' cm';
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Device fetch failed:', e);
+                }
+            })
+            .catch(err => console.error('Error fetching bin data:', err));
+    }
+
+    // Initial call and refresh every 3 seconds
+    updateLiveLevels();
+    setInterval(updateLiveLevels, 3000);
+</script>
+
+<body class="bg-slate-900 font-sans text-slate-100 h-screen overflow-hidden flex">
+    {% if not user or user.role != 'Worker' %}
+    <aside
+        class="w-64 sidebar-gradient text-white flex flex-col flex-shrink-0 transition-all duration-300 z-20 shadow-xl border-r border-slate-800">
+
+        <div class="p-6 border-b border-slate-800 bg-slate-900/50">
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=3b82f6&color=fff" alt="Admin"
+                        class="w-12 h-12 rounded-full border-2 border-green-500">
+                    <span
+                        class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-slate-900 rounded-full"></span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-white">Amravati Corp.</h3>
+                    <p class="text-xs text-slate-400">Super Admin</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-2">
+
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Management</div>
+
+            <a href="/admindashboard"
+                class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-chart-line text-lg"></i>
+                <span class="font-medium">Dashboard</span>
+            </a>
+
+            <a href="/bins"
+                class="flex items-center gap-3 px-4 py-3 bg-blue-600 rounded-lg text-white shadow-lg shadow-blue-900/20 hover:bg-blue-500 transition-all group">
+                <i class="fa-solid fa-trash-can text-lg"></i>
+                <span class="font-medium">Bins Management</span>
+            </a>
+
+            <a href="/removebins"
+                class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-ban text-lg text-red-400 group-hover:text-red-300"></i>
+                <span class="font-medium">Remove Bin</span>
+            </a>
+
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-2 px-3">Intelligence</div>
+
+            <a href="/analysis"
+                class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-brain text-lg text-purple-400 group-hover:text-purple-300"></i>
+                <span class="font-medium">Analysis & AI</span>
+            </a>
+
+            <a href="/alerts"
+                class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <div class="relative">
+                    <i class="fa-solid fa-bell text-lg text-yellow-400 group-hover:text-yellow-300"></i>
+                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                </div>
+                <span class="font-medium">Alerts</span>
+            </a>
+
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-2 px-3">System</div>
+
+            <a href="/settings"
+                class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-gear text-lg text-slate-400 group-hover:text-white"></i>
+                <span class="font-medium">Settings</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <a href="/"
+                class="flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-slate-800 hover:text-red-300 rounded-lg transition-all">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="font-medium">Log Out</span>
+            </a>
+        </div>
+    </aside>
+    {% endif %}
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+
+        <header
+            class="h-20 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-8 z-10 shadow-sm">
+
+            <div class="flex items-center gap-4">
+                <a href="{% if user and user.role == 'Worker' %}/worker{% else %}/admindashboard{% endif %}" class="text-slate-400 hover:text-slate-200 transition">
+                    <i class="fa-solid fa-chevron-left text-lg"></i>
+                </a>
+                <h1 class="text-2xl font-bold text-white">
+                    <span class="text-blue-500" id="pageTitle">All Bins</span>
+                </h1>
+            </div>
+
+            <div class="flex-1 max-w-2xl mx-12">
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i
+                            class="fa-solid fa-magnifying-glass text-slate-400 group-focus-within:text-blue-400 transition-colors"></i>
+                    </div>
+                    <input type="text"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-full py-2.5 pl-12 pr-4 text-sm text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        id="searchInput" placeholder="Search by Bin ID or Location...">
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button class="p-3 rounded-full bg-slate-700 text-blue-400 hover:bg-slate-600 transition-colors"
+                    title="Refresh Data">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
+                <div class="h-8 w-px bg-slate-700"></div>
+                <button
+                    class="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-md hover:bg-blue-500 transition-transform active:scale-95">
+                    <i class="fa-solid fa-file-export mr-2"></i> Export
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 bg-slate-900">
+
+            <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6 mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex flex-col">
+                        <h3 class="font-bold text-white text-lg"><i
+                                class="fa-solid fa-trash-can text-blue-500 mr-2"></i> Active Bins</h3>
+                        <p class="text-sm text-slate-400 mt-1">Total Bins: <span id="totalBinsCount"
+                                class="text-green-400 font-semibold">20</span></p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button
+                            class="text-xs px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition"
+                            data-filter="all">All</button>
+                        <button
+                            class="text-xs px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition"
+                            data-filter="critical">Critical</button>
+                        <button
+                            class="text-xs px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition"
+                            data-filter="warning">Warning</button>
+                        <button
+                            class="text-xs px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition"
+                            data-filter="normal">Normal</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-slate-400 text-xs uppercase border-b border-slate-700">
+                                <th class="py-3 px-4 font-semibold">Bin ID</th>
+                                <th class="py-3 px-4 font-semibold">Location</th>
+                                <th class="py-3 px-4 font-semibold">Severity</th>
+                                <th class="py-3 px-4 font-semibold">Fill Level</th>
+                                <th class="py-3 px-4 font-semibold">Last Updated</th>
+                                <th class="py-3 px-4 font-semibold">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm" id="binsTableBody">
+                            <!-- Table rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Sample bins data
+        let binsData = [
+            { id: 'BIN-001', location: 'Rajapeth Market', severity: 'critical', fillLevel: 98, lastUpdated: '5 mins ago', zone: '1' },
+            { id: 'BIN-002', location: 'Gandhi Square', severity: 'critical', fillLevel: 95, lastUpdated: '8 mins ago', zone: '1' },
+            { id: 'BIN-003', location: 'Main Market Zone 1', severity: 'warning', fillLevel: 88, lastUpdated: '10 mins ago', zone: '1' },
+            { id: 'BIN-004', location: 'Bus Stand Zone 2', severity: 'critical', fillLevel: 92, lastUpdated: '3 mins ago', zone: '2' },
+            { id: 'BIN-005', location: 'Central Park', severity: 'warning', fillLevel: 75, lastUpdated: '15 mins ago', zone: '2' },
+            { id: 'BIN-006', location: 'High Street', severity: 'normal', fillLevel: 45, lastUpdated: '20 mins ago', zone: '3' },
+            { id: 'BIN-007', location: 'Station Road', severity: 'critical', fillLevel: 94, lastUpdated: '2 mins ago', zone: '3' },
+            { id: 'BIN-008', location: 'Residential Area A', severity: 'normal', fillLevel: 52, lastUpdated: '25 mins ago', zone: '4' },
+            { id: 'BIN-009', location: 'Park Square', severity: 'warning', fillLevel: 80, lastUpdated: '12 mins ago', zone: '4' },
+            { id: 'BIN-010', location: 'Shopping Mall', severity: 'critical', fillLevel: 91, lastUpdated: '4 mins ago', zone: '5' },
+            { id: 'BIN-011', location: 'School Area', severity: 'normal', fillLevel: 38, lastUpdated: '30 mins ago', zone: '6' },
+        ];
+
+        // Load newly added bins from localStorage
+        const addedBins = JSON.parse(localStorage.getItem('addedBins')) || [];
+        let allBinsData = [...binsData]; // All bins (both active and removed)
+
+        addedBins.forEach(bin => {
+            const newBin = {
+                id: bin.id,
+                location: bin.location,
+                severity: 'normal',
+                fillLevel: 15,
+                lastUpdated: 'Just added'
+            };
+            binsData.push(newBin);
+            allBinsData.push(newBin);
+        });
+
+        // Load removed bins data from localStorage
+        let removedBinsData = JSON.parse(localStorage.getItem('removedBinsData')) || [];
+
+        // Filter out removed bins from active list
+        const removedBinIds = JSON.parse(localStorage.getItem('removedBins')) || [];
+        binsData = binsData.filter(bin => !removedBinIds.includes(bin.id));
+
+        // Get query parameter to determine which page to show
+        const urlParams = new URLSearchParams(window.location.search);
+        const binType = urlParams.get('type');
+        const zoneFilter = urlParams.get('zone');
+
+        // Filter data based on bin type
+        let displayData = binsData;
+        
+        if (zoneFilter) {
+            displayData = displayData.filter(bin => bin.zone === zoneFilter);
+            document.getElementById('pageTitle').textContent = `Zone ${zoneFilter} Bins`;
+        }
+
+        if (binType === 'full') {
+            displayData = displayData.filter(bin => bin.fillLevel > 90);
+            document.getElementById('pageTitle').textContent = zoneFilter ? `Zone ${zoneFilter} Full Bins (>90%)` : 'Full Bins (>90%)';
+        }
+
+        // Function to render table
+        function renderTable(filteredBins) {
+            const tbody = document.getElementById('binsTableBody');
+            tbody.innerHTML = '';
+
+            filteredBins.forEach(bin => {
+                const severityColor = bin.severity === 'critical'
+                    ? 'bg-red-900/40 text-red-400 border-red-800'
+                    : bin.severity === 'warning'
+                        ? 'bg-yellow-900/40 text-yellow-400 border-yellow-800'
+                        : 'bg-green-900/40 text-green-400 border-green-800';
+
+                const actionButtonColor = bin.severity === 'critical'
+                    ? 'bg-red-600 hover:bg-red-500'
+                    : 'bg-blue-600 hover:bg-blue-500';
+
+                const row = `
+                    <tr class="border-b border-slate-700/50 hover:bg-slate-700/30 transition cursor-pointer bin-row" data-bin-id="${bin.id}">
+                        <td class="py-4 px-4 font-medium text-slate-200">${bin.id}</td>
+                        <td class="py-4 px-4 text-slate-400">${bin.location}</td>
+                        <td class="py-4 px-4">
+                            <span class="px-3 py-1 rounded-full border text-xs font-bold ${severityColor}">
+                                ${bin.severity.charAt(0).toUpperCase() + bin.severity.slice(1)}
+                            </span>
+                        </td>
+                        <td class="py-4 px-4">
+                            <div class="w-full bg-slate-700 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full" style="width: ${bin.fillLevel}%"></div>
+                            </div>
+                            <span class="text-xs text-slate-400 mt-1 block">${bin.fillLevel}%</span>
+                        </td>
+                        <td class="py-4 px-4 text-slate-500">${bin.lastUpdated}</td>
+                        <td class="py-4 px-4 flex gap-2">
+                            <div class="flex gap-2">
+                                ${ "{{ 'true' if user and user.role == 'Worker' else 'false' }}" === 'true'
+                                ? `<button onclick="window.open('https://maps.google.com/?q=${bin.location}'); event.stopPropagation();" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded text-xs font-semibold transition">Route</button>
+                                   <button onclick="alert('Marked clean!'); event.stopPropagation();" class="bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded text-xs font-semibold transition">Clean</button>` 
+                                : (bin.severity === 'critical'
+                        ? `<button class="assign-urgent-btn bg-red-600 text-white px-4 py-2 rounded text-xs font-semibold hover:bg-red-500 transition" data-bin="${bin.id}" data-location="${bin.location}" data-urgent="true">Assign Urgently</button>`
+                        : `<button class="assign-btn bg-blue-600 text-white px-4 py-2 rounded text-xs font-semibold hover:bg-blue-500 transition" data-bin="${bin.id}" data-location="${bin.location}" data-urgent="false">Assign</button>`
+                    ) }
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // Function to update total bins count display
+        function updateTotalBinsDisplay() {
+            document.getElementById('totalBinsCount').textContent = binsData.length;
+        }
+
+        // Function to remove a bin
+        function removeBin(binId) {
+            if (confirm(`Are you sure you want to delete ${binId}?`)) {
+                // Find the bin to remove
+                const binToRemove = binsData.find(bin => bin.id === binId);
+
+                if (binToRemove) {
+                    // Remove from active binsData array
+                    binsData = binsData.filter(bin => bin.id !== binId);
+
+                    // Add to removed bins data
+                    removedBinsData.push(binToRemove);
+
+                    // Add to removed bins list in localStorage
+                    const removedBinIds = JSON.parse(localStorage.getItem('removedBins')) || [];
+                    if (!removedBinIds.includes(binId)) {
+                        removedBinIds.push(binId);
+                        localStorage.setItem('removedBins', JSON.stringify(removedBinIds));
+                    }
+
+                    // Save removed bins data to localStorage
+                    localStorage.setItem('removedBinsData', JSON.stringify(removedBinsData));
+
+                    // Update display
+                    displayData = displayData.filter(bin => bin.id !== binId);
+                    updateTotalBinsDisplay();
+                    updateRemovedBinsDisplay();
+                    renderTable(displayData);
+                    renderRemovedBinsTable();
+                    alert(`${binId} has been removed successfully!`);
+                }
+            }
+        }
+
+        // Function to restore a bin
+        function restoreBin(binId) {
+            if (confirm(`Are you sure you want to restore ${binId}?`)) {
+                // Find the bin in removed bins
+                const binToRestore = removedBinsData.find(bin => bin.id === binId);
+
+                if (binToRestore) {
+                    // Add back to active binsData
+                    binsData.push(binToRestore);
+                    displayData.push(binToRestore);
+
+                    // Remove from removed bins data
+                    removedBinsData = removedBinsData.filter(bin => bin.id !== binId);
+
+                    // Remove from removed bins list in localStorage
+                    const removedBinIds = JSON.parse(localStorage.getItem('removedBins')) || [];
+                    const updatedRemovedBinIds = removedBinIds.filter(id => id !== binId);
+                    localStorage.setItem('removedBins', JSON.stringify(updatedRemovedBinIds));
+
+                    // Save updated removed bins data to localStorage
+                    localStorage.setItem('removedBinsData', JSON.stringify(removedBinsData));
+
+                    // Update display
+                    updateTotalBinsDisplay();
+                    updateRemovedBinsDisplay();
+                    renderTable(displayData);
+                    renderRemovedBinsTable();
+                    alert(`${binId} has been restored successfully!`);
+                }
+            }
+        }
+
+        // Initial render
+        renderTable(displayData);
+        updateTotalBinsDisplay();
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('keyup', function (e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = displayData.filter(bin =>
+                bin.id.toLowerCase().includes(searchTerm) ||
+                bin.location.toLowerCase().includes(searchTerm)
+            );
+            renderTable(filtered);
+        });
+
+        // Filter buttons
+        document.querySelectorAll('[data-filter]').forEach(button => {
+            button.addEventListener('click', function () {
+                document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('bg-blue-600'));
+                this.classList.add('bg-blue-600');
+
+                const filter = this.getAttribute('data-filter');
+                let filtered = displayData;
+
+                if (filter === 'critical') {
+                    filtered = displayData.filter(bin => bin.severity === 'critical');
+                } else if (filter === 'warning') {
+                    filtered = displayData.filter(bin => bin.severity === 'warning');
+                } else if (filter === 'normal') {
+                    filtered = displayData.filter(bin => bin.severity === 'normal');
+                }
+
+                renderTable(filtered);
+            });
+        });
+
+        // Assign modal for bins page
+        // bin details modal
+        const binDetailsModalHtml = `
+        <div id="binDetailsModal" class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 hidden z-50">
+            <div class="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-2xl p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-white">Bin Details</h2>
+                    <button id="closeBinDetailsModal" class="text-slate-400 hover:text-white text-2xl">✕</button>
+                </div>
+                <div class="space-y-6">
+                    <div>
+                        <p class="text-slate-400 text-sm mb-1">Bin ID</p>
+                        <p class="text-xl font-bold text-white" id="modalBinId">--</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-sm mb-1">Location</p>
+                        <p class="text-white" id="modalBinLocation">--</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-sm mb-2">Fill Percentage</p>
+                        <div class="flex items-center gap-4">
+                            <div class="flex-1">
+                                <div class="w-full bg-slate-700 rounded-full h-4">
+                                    <div id="modalFillBar" class="bg-blue-500 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="text-4xl font-bold text-blue-400 min-w-fit" id="modalFillPercent">0%</div>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-sm mb-1">Distance (Live)</p>
+                        <p class="text-2xl font-bold text-cyan-400" id="modalDistance">-- cm</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-sm mb-1">Status</p>
+                        <span class="px-3 py-1 rounded-full border text-sm font-bold" id="modalSeverity">Normal</span>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-sm mb-1">Last Updated</p>
+                        <p class="text-slate-300" id="modalLastUpdated">--</p>
+                    </div>
+                    <button id="closeBinDetailsBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg transition">Close</button>
+                </div>
+            </div>
+        </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', binDetailsModalHtml);
+
+        const binDetailsModal = document.getElementById('binDetailsModal');
+        const closeBinDetailsModal = document.getElementById('closeBinDetailsModal');
+        const closeBinDetailsBtn = document.getElementById('closeBinDetailsBtn');
+
+        let modalLiveUpdateInterval = null;
+
+        function openBinDetailsModal(bin) {
+            document.getElementById('modalBinId').textContent = bin.id;
+            document.getElementById('modalBinLocation').textContent = bin.location;
+
+            binDetailsModal.classList.remove('hidden');
+
+            // Clear any existing interval
+            if (modalLiveUpdateInterval) clearInterval(modalLiveUpdateInterval);
+
+            // Fetch live data from backend and update continuously
+            // ... existing code inside openBinDetailsModal(bin) ...
+
+            // REPLACE THE SECTION BELOW
+            function fetchLiveBinData() {
+                fetch("/data")
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById("modalDistance").textContent = data.distance + " cm";
+                        document.getElementById("modalFillPercent").textContent = data.fill + "%";
+
+                        const fillBar = document.getElementById("modalFillBar");
+                        fillBar.style.width = data.fill + "%";
+
+                        if (data.fill >= 90) {
+                            fillBar.className = 'bg-red-600 h-4 rounded-full transition-all';
+                            document.getElementById("modalSeverity").className = "px-3 py-1 rounded-full border text-sm font-bold bg-red-900/40 text-red-400 border-red-800";
+                            document.getElementById("modalSeverity").textContent = "Critical";
+                        } else if (data.fill >= 70) {
+                            fillBar.className = 'bg-yellow-500 h-4 rounded-full transition-all';
+                            document.getElementById("modalSeverity").className = "px-3 py-1 rounded-full border text-sm font-bold bg-yellow-900/40 text-yellow-400 border-yellow-800";
+                            document.getElementById("modalSeverity").textContent = "Warning";
+                        } else {
+                            fillBar.className = 'bg-green-500 h-4 rounded-full transition-all';
+                            document.getElementById("modalSeverity").className = "px-3 py-1 rounded-full border text-sm font-bold bg-green-900/40 text-green-400 border-green-800";
+                            document.getElementById("modalSeverity").textContent = "Normal";
+                        }
+                    })
+                    .catch(err => console.log("Error fetching sensor data:", err));
+            }
+
+            // ... the rest of the file (initial fetch and setInterval) ...
+
+            // Initial fetch
+            fetchLiveBinData();
+
+            // Update every 2 seconds
+            modalLiveUpdateInterval = setInterval(fetchLiveBinData, 2000);
+        }
+
+        function closeBinDetailsModalFunc() {
+            binDetailsModal.classList.add('hidden');
+            // Clear the live update interval when modal closes
+            if (modalLiveUpdateInterval) {
+                clearInterval(modalLiveUpdateInterval);
+                modalLiveUpdateInterval = null;
+            }
+        }
+
+        closeBinDetailsModal.addEventListener('click', closeBinDetailsModalFunc);
+        closeBinDetailsBtn.addEventListener('click', closeBinDetailsModalFunc);
+
+        // click handler for bin rows
+        document.addEventListener('click', function (e) {
+            const binRow = e.target.closest('.bin-row');
+            if (binRow) {
+                const binId = binRow.getAttribute('data-bin-id');
+                const bin = binsData.find(b => b.id === binId);
+                if (bin) openBinDetailsModal(bin);
+            }
+        });
+
+        // Assign modal for bins page
+        // create modal HTML
+        const modalHtml = `
+        <div id="binAssignModal" class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 hidden z-50">
+            <div class="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-2xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold">Assign Task to Worker</h3>
+                    <button id="closeBinAssignModal" class="text-slate-400 hover:text-white">✕</button>
+                </div>
+                <form id="binAssignForm" class="space-y-3">
+                    <div>
+                        <label class="text-sm text-slate-300">Bin ID</label>
+                        <input id="binAssignBin" class="w-full mt-1 p-2 bg-slate-800 border border-slate-700 rounded text-slate-100" readonly>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-300">Location</label>
+                        <input id="binAssignLocation" class="w-full mt-1 p-2 bg-slate-800 border border-slate-700 rounded text-slate-100">
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-300">Worker ID</label>
+                        <input id="binAssignWorkerId" class="w-full mt-1 p-2 bg-slate-800 border border-slate-700 rounded text-slate-100" placeholder="e.g. W001" required>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-300">Worker Name</label>
+                        <input id="binAssignWorkerName" class="w-full mt-1 p-2 bg-slate-800 border border-slate-700 rounded text-slate-100" placeholder="e.g. Ramesh K." required>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-300">Scheduled Time</label>
+                        <input id="binAssignTime" type="datetime-local" class="w-full mt-1 p-2 bg-slate-800 border border-slate-700 rounded text-slate-100" required>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-300">Priority</label>
+                        <select id="binAssignPriority" class="w-full mt-1 p-2 bg-slate-800 border border-slate-700 rounded text-slate-100">
+                            <option value="normal">Normal</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-3 pt-3">
+                        <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 py-2 rounded-lg font-bold">Assign Task</button>
+                        <button type="button" id="binAssignCancel" class="flex-1 bg-slate-700 hover:bg-slate-600 py-2 rounded-lg">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const binAssignModal = document.getElementById('binAssignModal');
+        const binAssignForm = document.getElementById('binAssignForm');
+        const closeBinAssignModal = document.getElementById('closeBinAssignModal');
+        const binAssignCancel = document.getElementById('binAssignCancel');
+
+        function openBinAssignModal(prefill = {}) {
+            document.getElementById('binAssignBin').value = prefill.bin || '';
+            document.getElementById('binAssignLocation').value = prefill.location || '';
+            document.getElementById('binAssignWorkerId').value = prefill.workerId || '';
+            document.getElementById('binAssignWorkerName').value = prefill.workerName || '';
+            document.getElementById('binAssignTime').value = prefill.time || '';
+            document.getElementById('binAssignPriority').value = prefill.priority || (prefill.urgent ? 'urgent' : 'normal');
+            binAssignModal.classList.remove('hidden');
+        }
+
+        function closeBinModal() {
+            binAssignModal.classList.add('hidden');
+            binAssignForm.reset();
+        }
+
+        closeBinAssignModal.addEventListener('click', closeBinModal);
+        binAssignCancel.addEventListener('click', closeBinModal);
+
+        // Delegated click handler for assign buttons
+        document.addEventListener('click', function (e) {
+            const assignBtn = e.target.closest('.assign-btn, .assign-urgent-btn');
+            if (!assignBtn) return;
+            const bin = assignBtn.getAttribute('data-bin');
+            const location = assignBtn.getAttribute('data-location');
+            const urgent = assignBtn.getAttribute('data-urgent') === 'true';
+            openBinAssignModal({ bin, location, urgent });
+        });
+
+        // Delegated click handler for delete and restore buttons
+        document.addEventListener('click', function (e) {
+            const deleteBtn = e.target.closest('.delete-bin-btn');
+            if (deleteBtn) {
+                const binId = deleteBtn.getAttribute('data-bin');
+                removeBin(binId);
+                return;
+            }
+
+            const restoreBtn = e.target.closest('.restore-bin-btn');
+            if (restoreBtn) {
+                const binId = restoreBtn.getAttribute('data-bin');
+                restoreBin(binId);
+                return;
+            }
+        });
+
+        binAssignForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const bin = document.getElementById('binAssignBin').value.trim();
+            const location = document.getElementById('binAssignLocation').value.trim();
+            const workerId = document.getElementById('binAssignWorkerId').value.trim();
+            const workerName = document.getElementById('binAssignWorkerName').value.trim();
+            const time = document.getElementById('binAssignTime').value;
+            const priority = document.getElementById('binAssignPriority').value;
+
+            if (!workerId || !workerName || !location || !time) { alert('Please fill all fields'); return; }
+
+            const tasks = JSON.parse(localStorage.getItem('assignedTasks') || '[]');
+            const task = {
+                id: 'T' + Date.now(),
+                bin,
+                location,
+                workerId,
+                workerName,
+                scheduledAt: time,
+                assignedAt: new Date().toISOString(),
+                status: 'assigned',
+                priority // 'normal' or 'urgent'
+            };
+            tasks.push(task);
+            localStorage.setItem('assignedTasks', JSON.stringify(tasks));
+
+            alert('Task assigned to ' + workerName + (priority === 'urgent' ? ' (Urgent)' : ''));
+            closeBinModal();
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SilentStorm - Smart Waste Management Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- GLOBAL RESET & FONTS --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { overflow-y: scroll; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- NAVBAR --- */
+        .navbar {
+            background: #0f172a; /* Dark Slate for Professional Look */
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            position: sticky; 
+            top: 0;
+            z-index: 1000;
+        }
+        .navbar h2 { color: #38bdf8; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+        .navbar h2 span { color: white; }
+        .navbar ul { list-style: none; display: flex; gap: 30px; }
+        .navbar ul li a { 
+            color: rgba(255,255,255,0.9); text-decoration: none; font-weight: 500; 
+            font-size: 15px; transition: 0.3s; padding: 5px 10px;
+        }
+        .navbar ul li a:hover { color: #38bdf8; }
+
+        /* --- HERO SECTION --- */
+        .hero-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        }
+
+        .header-text { text-align: center; margin-bottom: 40px; color: #0f172a; }
+        .header-text h1 { font-size: 2.5rem; margin-bottom: 10px; font-weight: 800; }
+        .header-text p { font-size: 1.1rem; color: #64748b; }
+
+        /* --- SLIDING CONTAINER --- */
+        .container {
+            background-color: #fff;
+            border-radius: 20px;
+            box-shadow: 0 14px 28px rgba(0,0,0,0.15), 0 10px 10px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            width: 850px;
+            max-width: 100%;
+            min-height: 550px; 
+        }
+
+        .form-container {
+            position: absolute; top: 0; height: 100%; transition: all 0.6s ease-in-out;
+            display: flex; align-items: center; justify-content: center; flex-direction: column;
+            padding: 0 50px; text-align: center;
+        }
+
+        .form-container form {
+            background-color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column; width: 100%;
+        }
+
+        .in-group { width: 100%; margin: 8px 0; text-align: left; }
+        
+        input, select {
+            background-color: #f1f5f9; border: 2px solid transparent; padding: 12px 15px; width: 100%;
+            border-radius: 10px; font-size: 0.9rem; font-family: inherit; transition: 0.3s;
+        }
+        input:focus, select:focus {
+            background-color: #fff; border-color: #0ea5e9; outline: none; box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+        }
+
+        button {
+            border-radius: 25px; border: none;
+            font-size: 13px; font-weight: 700; padding: 14px 50px; letter-spacing: 1px;
+            text-transform: uppercase; transition: 0.3s; cursor: pointer; margin-top: 20px;
+        }
+        button:active { transform: scale(0.95); }
+        button:disabled { background-color: #cbd5e1 !important; cursor: not-allowed; }
+        
+        .btn-municipal { background-color: #0f172a; color: white; }
+        .btn-worker { background-color: #0284c7; color: white; }
+        .btn-ghost { background-color: transparent; border: 2px solid #ffffff; color: #ffffff; }
+
+        /* --- REMEMBER ME CHECKBOX --- */
+        .remember-section { display: flex; align-items: center; gap: 8px; margin: 15px 0; font-size: 13px; color: #64748b; }
+        .remember-section input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #0284c7; }
+        .remember-section label { cursor: pointer; }
+
+        /* --- ANIMATION LOGIC --- */
+        .sign-in-container { left: 0; width: 50%; z-index: 2; } 
+        .sign-up-container { left: 0; width: 50%; opacity: 0; z-index: 1; }
+
+        .container.right-panel-active .sign-in-container { transform: translateX(100%); }
+        .container.right-panel-active .sign-up-container { transform: translateX(100%); opacity: 1; z-index: 5; animation: show 0.6s; }
+
+        @keyframes show { 0%, 49.99% { opacity: 0; z-index: 1; } 50%, 100% { opacity: 1; z-index: 5; } }
+
+        /* --- OVERLAY --- */
+        .overlay-container {
+            position: absolute; top: 0; left: 50%; width: 50%; height: 100%;
+            overflow: hidden; transition: transform 0.6s ease-in-out; z-index: 100;
+        }
+        .container.right-panel-active .overlay-container { transform: translateX(-100%); }
+
+        .overlay {
+            background: linear-gradient(to right, #0ea5e9, #0f172a);
+            color: #ffffff; position: relative; left: -100%; height: 100%; width: 200%;
+            transform: translateX(0); transition: transform 0.6s ease-in-out;
+        }
+        .container.right-panel-active .overlay { transform: translateX(50%); }
+
+        .overlay-panel {
+            position: absolute; display: flex; align-items: center; justify-content: center;
+            flex-direction: column; padding: 0 40px; text-align: center; top: 0; height: 100%; width: 50%;
+            transition: transform 0.6s ease-in-out;
+        }
+        .overlay-left { transform: translateX(-20%); }
+        .container.right-panel-active .overlay-left { transform: translateX(0); }
+        .overlay-right { right: 0; transform: translateX(0); }
+        .container.right-panel-active .overlay-right { transform: translateX(20%); }
+
+        footer { background: #0f172a; color: #94a3b8; text-align: center; padding: 20px; font-size: 13px; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <h2>Silent<span>Storm</span></h2>
+        <div style="display: flex; align-items: center; gap: 20px;">
+        </div>
+    </nav>
+
+    <main class="hero-section">
+        <header class="header-text">
+            <h1>अमरावती महानगरपालिका</h1>
+            <p>Smart Waste Management System</p>
+        </header>
+
+        {% if error %}
+        <div style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; padding:12px 20px; border-radius:10px; margin-bottom:20px; font-size:14px; font-weight:500; width:850px; max-width:100%; text-align:center;">
+            <i class="fa-solid fa-circle-exclamation" style="margin-right:6px;"></i>{{ error }}
+        </div>
+        {% endif %}
+        {% if success %}
+        <div style="background:#dcfce7; color:#166534; border:1px solid #86efac; padding:12px 20px; border-radius:10px; margin-bottom:20px; font-size:14px; font-weight:500; width:850px; max-width:100%; text-align:center;">
+            <i class="fa-solid fa-circle-check" style="margin-right:6px;"></i>{{ success }}
+        </div>
+        {% endif %}
+        <div class="container" id="container">
+            
+            <div class="form-container sign-up-container">
+                <form id="officialForm" action="/login" method="POST">
+                    <h2 style="color: #0f172a; margin-bottom: 20px;">Official Login</h2>
+                    <input type="hidden" name="login_type" value="official">
+                    <div class="in-group">
+                        <input type="text" name="mobile" id="officialMobile" placeholder="Mobile Number" required>
+                    </div>
+                    <div class="in-group">
+                        <select name="role" id="officialRole" required onchange="toggleZoneField()">
+                            <option value="">Select Role</option>
+                            <option value="Worker">Worker</option>
+                            <option value="Admin">Municipal Admin</option>
+                        </select>
+                    </div>
+                    <div class="in-group" id="officialZoneGroup" style="display: none;">
+                        <select name="zone" id="officialZone">
+                            <option value="">Select Zone (1-6)</option>
+                            <option value="1">Zone 1</option>
+                            <option value="2">Zone 2</option>
+                            <option value="3">Zone 3</option>
+                            <option value="4">Zone 4</option>
+                            <option value="5">Zone 5</option>
+                            <option value="6">Zone 6</option>
+                        </select>
+                    </div>
+                    <div class="in-group">
+                        <input type="password" name="password" id="officialPass" placeholder="Password" required>
+                    </div>
+                    <div class="remember-section">
+                        <input type="checkbox" id="officialRemember">
+                        <label for="officialRemember">Remember me</label>
+                    </div>
+                    <button type="submit" class="btn-municipal" id="btnOfficial">Access Dashboard</button>
+                    <a href="/register/worker" style="margin-top:15px; display: block; font-size:13px; color:#0f172a; text-decoration:none;">Create Account</a>
+                </form>
+            </div>
+
+            <div class="form-container sign-in-container">
+                <form id="citizenForm" action="/login" method="POST">
+                    <h2 style="color: #0284c7; margin-bottom: 20px;">Citizen Login</h2>
+                    <input type="hidden" name="login_type" value="citizen">
+                    <div class="in-group">
+                        <input type="text" name="mobile" id="citizenMobile" placeholder="Mobile Number" required>
+                    </div>
+                    <div class="in-group">
+                        <input type="password" name="password" id="citizenPass" placeholder="Password" required>
+                    </div>
+                    <div class="remember-section">
+                        <input type="checkbox" id="citizenRemember">
+                        <label for="citizenRemember">Remember me</label>
+                    </div>
+                    <button type="submit" class="btn-worker" id="btnCitizen">Login</button>
+                    <a href="#" style="margin-top:15px; display: block; font-size:13px; color:#0284c7; text-decoration:none;">Forget Password?</a>
+                    <a href="/register/citizen" style="margin-top:5px; display: block; font-size:13px; color:#0284c7; text-decoration:none;">Create Account</a>
+                </form>
+            </div>
+
+            <div class="overlay-container">
+                <div class="overlay">
+                    <div class="overlay-panel overlay-left">
+                        <h1>Citizen?</h1>
+                        <p>Log in to view zone bins, workers and file complaints.</p>
+                        <button class="btn-ghost" id="signIn">Citizen Login</button>
+                    </div>
+                    <div class="overlay-panel overlay-right">
+                        <h1>Official?</h1>
+                        <p>Access worker and municipal admin dashboards.</p>
+                        <button class="btn-ghost" id="signUp">Official Login</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 SilentStorm AI Solutions | Empowering Clean Cities</p>
+    </footer>
+
+    <script>
+        const container = document.getElementById('container');
+        const signUpButton = document.getElementById('signUp');
+        const signInButton = document.getElementById('signIn');
+
+        // Toggle between Official and Citizen Login
+        signUpButton.addEventListener('click', () => container.classList.add("right-panel-active"));
+        signInButton.addEventListener('click', () => container.classList.remove("right-panel-active"));
+
+        function toggleZoneField() {
+            const role = document.getElementById('officialRole').value;
+            const zoneGroup = document.getElementById('officialZoneGroup');
+            const zoneInput = document.getElementById('officialZone');
+            if (role === 'Worker') {
+                zoneGroup.style.display = 'block';
+                zoneInput.setAttribute('required', 'required');
+            } else {
+                zoneGroup.style.display = 'none';
+                zoneInput.removeAttribute('required');
+                zoneInput.value = '';
+            }
+        }
+    </script>
+</body>
+</html>

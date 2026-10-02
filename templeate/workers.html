@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SilentStorm - Workers Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar-gradient {
+            background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+    </style>
+</head>
+<body class="bg-slate-900 font-sans text-slate-100 h-screen overflow-hidden flex">
+
+    <aside class="w-64 sidebar-gradient text-white flex flex-col flex-shrink-0 transition-all duration-300 z-20 shadow-xl border-r border-slate-800">
+        
+        <div class="p-6 border-b border-slate-800 bg-slate-900/50">
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=3b82f6&color=fff" alt="Admin" class="w-12 h-12 rounded-full border-2 border-green-500">
+                    <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-slate-900 rounded-full"></span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-white">Amravati Corp.</h3>
+                    <p class="text-xs text-slate-400">Super Admin</p>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-2">
+            
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Management</div>
+            
+            <a href="/admindashboard" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-chart-line text-lg"></i>
+                <span class="font-medium">Dashboard</span>
+            </a>
+
+            <a href="/bins" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-trash-can text-lg"></i>
+                <span class="font-medium">Bins Management</span>
+            </a>
+
+            <a href="#" class="flex items-center gap-3 px-4 py-3 bg-blue-600 rounded-lg text-white shadow-lg shadow-blue-900/20 hover:bg-blue-500 transition-all group">
+                <i class="fa-solid fa-people-group text-lg"></i>
+                <span class="font-medium">Workers</span>
+            </a>
+
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-2 px-3">Intelligence</div>
+
+            <a href="/analysis" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-brain text-lg text-purple-400 group-hover:text-purple-300"></i>
+                <span class="font-medium">Analysis & AI</span>
+            </a>
+
+            <a href="/alerts" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <div class="relative">
+                    <i class="fa-solid fa-bell text-lg text-yellow-400 group-hover:text-yellow-300"></i>
+                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                </div>
+                <span class="font-medium">Alerts</span>
+            </a>
+
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-2 px-3">System</div>
+
+            <a href="/settings" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-gear text-lg text-slate-400 group-hover:text-white"></i>
+                <span class="font-medium">Settings</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <a href="/" class="flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-slate-800 hover:text-red-300 rounded-lg transition-all">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="font-medium">Log Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        
+        <header class="h-20 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-8 z-10 shadow-sm">
+            
+            <div class="flex items-center gap-4">
+                <a href="/admindashboard" class="text-slate-400 hover:text-slate-200 transition">
+                    <i class="fa-solid fa-chevron-left text-lg"></i>
+                </a>
+                <h1 class="text-2xl font-bold text-white">
+                    <span class="text-blue-500">Workers Management</span>
+                </h1>
+            </div>
+
+            <div class="flex-1 max-w-2xl mx-12">
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-magnifying-glass text-slate-400 group-focus-within:text-blue-400 transition-colors"></i>
+                    </div>
+                    <input type="text" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-full py-2.5 pl-12 pr-4 text-sm text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        id="searchInput"
+                        placeholder="Search by Worker ID or Name...">
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button class="p-3 rounded-full bg-slate-700 text-blue-400 hover:bg-slate-600 transition-colors" title="Refresh Data">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
+                <div class="h-8 w-px bg-slate-700"></div>
+                <button class="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-md hover:bg-blue-500 transition-transform active:scale-95">
+                    <i class="fa-solid fa-file-export mr-2"></i> Export
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 bg-slate-900">
+            
+            <div class="mb-6 flex gap-4 items-center">
+                <div class="bg-blue-900/20 border border-blue-900/50 rounded-lg px-4 py-2">
+                    <p class="text-sm text-blue-300"><i class="fa-solid fa-circle text-green-500 mr-2"></i>Active Workers: <span class="font-bold" id="activeCount">8</span></p>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2">
+                    <p class="text-sm text-slate-400"><i class="fa-solid fa-circle text-slate-500 mr-2"></i>Inactive Workers: <span class="font-bold" id="inactiveCount">7</span></p>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-bold text-white text-lg"><i class="fa-solid fa-people-group text-green-500 mr-2"></i> All Workers</h3>
+                    <div class="flex gap-2">
+                        <button class="text-xs px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition" data-filter="all">All</button>
+                        <button class="text-xs px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition" data-filter="active">Active Only</button>
+                        <button class="text-xs px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition" data-filter="inactive">Inactive Only</button>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-slate-400 text-xs uppercase border-b border-slate-700">
+                                <th class="py-3 px-4 font-semibold">Status</th>
+                                <th class="py-3 px-4 font-semibold">Worker ID</th>
+                                <th class="py-3 px-4 font-semibold">Worker Name</th>
+                                <th class="py-3 px-4 font-semibold">Performance</th>
+                                <th class="py-3 px-4 font-semibold">Report</th>
+                                <th class="py-3 px-4 font-semibold">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm" id="workersTableBody">
+                            <!-- Table rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Worker Report Modal -->
+    <div id="reportModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 rounded-2xl border border-slate-700 max-w-2xl w-full max-h-screen overflow-y-auto shadow-2xl">
+            <div class="sticky top-0 bg-slate-800 border-b border-slate-700 p-6 flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-white">Worker Performance Report</h2>
+                <button id="closeReportBtn" class="text-slate-400 hover:text-white transition text-2xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-8 space-y-6">
+                <!-- Worker Header -->
+                <div class="bg-gradient-to-r from-blue-900/30 to-slate-900/30 border border-blue-800/50 rounded-xl p-6">
+                    <div class="flex items-start justify-between">
+                        <div class="flex gap-4 flex-1">
+                            <img src="https://ui-avatars.com/api/?name=WORKER&background=3b82f6&color=fff" alt="Worker" class="w-16 h-16 rounded-full border-2 border-blue-500">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <h3 id="reportWorkerName" class="text-2xl font-bold text-white">Worker Name</h3>
+                                    <span id="reportWorkerStatus" class="px-3 py-1 rounded-full text-xs font-semibold bg-green-900/40 text-green-400 border border-green-800">ACTIVE</span>
+                                </div>
+                                <p id="reportWorkerId" class="text-slate-400 text-sm font-mono">ID: WRK-001</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-slate-400 text-sm">Last Updated</p>
+                            <p id="reportLastUpdated" class="text-white font-semibold">Today, 2:30 PM</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Overview -->
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="bg-slate-700/50 border border-slate-700 rounded-lg p-4">
+                        <p class="text-slate-400 text-xs uppercase mb-2">Overall Performance</p>
+                        <div class="flex items-end justify-between">
+                            <span id="reportPerformanceScore" class="text-3xl font-bold text-green-400">92%</span>
+                            <div class="text-right">
+                                <div class="w-24 bg-slate-600 rounded-full h-2 mb-1">
+                                    <div id="reportPerformanceBar" class="bg-green-500 h-2 rounded-full" style="width: 92%"></div>
+                                </div>
+                                <p class="text-xs text-green-400 font-semibold">Excellent</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-700/50 border border-slate-700 rounded-lg p-4">
+                        <p class="text-slate-400 text-xs uppercase mb-2">Monthly Pickups</p>
+                        <p id="reportPickups" class="text-3xl font-bold text-blue-400">45</p>
+                        <p class="text-xs text-slate-400 mt-2">Collections</p>
+                    </div>
+                    <div class="bg-slate-700/50 border border-slate-700 rounded-lg p-4">
+                        <p class="text-slate-400 text-xs uppercase mb-2">Assigned Zone</p>
+                        <p id="reportZone" class="text-2xl font-bold text-purple-400">Zone 2</p>
+                        <p class="text-xs text-slate-400 mt-2">Service Area</p>
+                    </div>
+                </div>
+
+                <!-- Detailed Metrics -->
+                <div class="border border-slate-700 rounded-lg overflow-hidden">
+                    <div class="bg-slate-700/50 px-6 py-3 border-b border-slate-700">
+                        <h4 class="font-bold text-white"><i class="fa-solid fa-chart-line mr-2 text-blue-400"></i>Detailed Metrics</h4>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-slate-300 text-sm font-medium">Punctuality</span>
+                                <span id="reportPunctuality" class="text-slate-300 text-sm font-bold">88%</span>
+                            </div>
+                            <div class="w-full bg-slate-700 rounded-full h-2">
+                                <div id="reportPunctualityBar" class="bg-blue-500 h-2 rounded-full" style="width: 88%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-slate-300 text-sm font-medium">Completion Rate</span>
+                                <span id="reportCompletion" class="text-slate-300 text-sm font-bold">96%</span>
+                            </div>
+                            <div class="w-full bg-slate-700 rounded-full h-2">
+                                <div id="reportCompletionBar" class="bg-green-500 h-2 rounded-full" style="width: 96%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-slate-300 text-sm font-medium">Quality Score</span>
+                                <span id="reportQuality" class="text-slate-300 text-sm font-bold">90%</span>
+                            </div>
+                            <div class="w-full bg-slate-700 rounded-full h-2">
+                                <div id="reportQualityBar" class="bg-yellow-500 h-2 rounded-full" style="width: 90%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-slate-300 text-sm font-medium">Customer Rating</span>
+                                <span id="reportRating" class="text-slate-300 text-sm font-bold">4.5/5.0</span>
+                            </div>
+                            <div class="flex gap-1">
+                                <i class="fa-solid fa-star text-yellow-400"></i>
+                                <i class="fa-solid fa-star text-yellow-400"></i>
+                                <i class="fa-solid fa-star text-yellow-400"></i>
+                                <i class="fa-solid fa-star text-yellow-400"></i>
+                                <i class="fa-solid fa-star-half-stroke text-yellow-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="border border-slate-700 rounded-lg overflow-hidden">
+                    <div class="bg-slate-700/50 px-6 py-3 border-b border-slate-700">
+                        <h4 class="font-bold text-white"><i class="fa-solid fa-address-card mr-2 text-green-400"></i>Contact Information</h4>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-envelope text-slate-500 w-5"></i>
+                            <div>
+                                <p class="text-xs text-slate-400">Email</p>
+                                <p id="reportEmail" class="text-slate-200">worker@company.com</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-phone text-slate-500 w-5"></i>
+                            <div>
+                                <p class="text-xs text-slate-400">Phone</p>
+                                <p id="reportPhone" class="text-slate-200">+91 9876543210</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-map-marker text-slate-500 w-5"></i>
+                            <div>
+                                <p class="text-xs text-slate-400">Working Zone</p>
+                                <p id="reportZoneDetail" class="text-slate-200">Zone 2 - Downtown Area</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3 pt-4 border-t border-slate-700">
+                    <button class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-lg transition">
+                        <i class="fa-solid fa-message mr-2"></i> Send Message
+                    </button>
+                    <button class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2.5 rounded-lg transition">
+                        <i class="fa-solid fa-file-pdf mr-2"></i> Download PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample workers data
+        const workersData = [
+            // Active Workers
+            { id: 'WRK-001', name: 'Ramesh Kumar', status: 'active', performance: 92, pickups: 45, zone: 'Zone 2', email: 'ramesh.k@company.com', phone: '+91 9876543210', punctuality: 88, completion: 96, quality: 90, rating: 4.5 },
+            { id: 'WRK-002', name: 'Suresh Patel', status: 'active', performance: 88, pickups: 42, zone: 'Zone 1', email: 'suresh.p@company.com', phone: '+91 9876543211', punctuality: 85, completion: 93, quality: 88, rating: 4.3 },
+            { id: 'WRK-003', name: 'Jayesh Singh', status: 'active', performance: 95, pickups: 48, zone: 'Zone 3', email: 'jayesh.s@company.com', phone: '+91 9876543212', punctuality: 92, completion: 98, quality: 94, rating: 4.8 },
+            { id: 'WRK-004', name: 'Amit Verma', status: 'active', performance: 85, pickups: 38, zone: 'Zone 2', email: 'amit.v@company.com', phone: '+91 9876543213', punctuality: 82, completion: 90, quality: 85, rating: 4.2 },
+            { id: 'WRK-005', name: 'Rajesh Nair', status: 'active', performance: 90, pickups: 44, zone: 'Zone 4', email: 'rajesh.n@company.com', phone: '+91 9876543214', punctuality: 87, completion: 94, quality: 91, rating: 4.6 },
+            { id: 'WRK-006', name: 'Vikram Desai', status: 'active', performance: 87, pickups: 41, zone: 'Zone 1', email: 'vikram.d@company.com', phone: '+91 9876543215', punctuality: 84, completion: 92, quality: 87, rating: 4.4 },
+            { id: 'WRK-007', name: 'Arjun Chauhan', status: 'active', performance: 91, pickups: 46, zone: 'Zone 3', email: 'arjun.c@company.com', phone: '+91 9876543216', punctuality: 89, completion: 95, quality: 92, rating: 4.7 },
+            { id: 'WRK-008', name: 'Mohan Reddy', status: 'active', performance: 89, pickups: 43, zone: 'Zone 2', email: 'mohan.r@company.com', phone: '+91 9876543217', punctuality: 86, completion: 93, quality: 89, rating: 4.5 },
+            // Inactive Workers
+            { id: 'WRK-009', name: 'Pradeep Kumar', status: 'inactive', performance: 76, pickups: 28, zone: 'Zone 4', email: 'pradeep.k@company.com', phone: '+91 9876543218', punctuality: 72, completion: 80, quality: 75, rating: 3.8 },
+            { id: 'WRK-010', name: 'Santosh Rao', status: 'inactive', performance: 78, pickups: 30, zone: 'Zone 1', email: 'santosh.r@company.com', phone: '+91 9876543219', punctuality: 74, completion: 82, quality: 78, rating: 3.9 },
+            { id: 'WRK-011', name: 'Karthik Iyer', status: 'inactive', performance: 72, pickups: 25, zone: 'Zone 2', email: 'karthik.i@company.com', phone: '+91 9876543220', punctuality: 68, completion: 75, quality: 72, rating: 3.5 },
+            { id: 'WRK-012', name: 'Naveen Kumar', status: 'inactive', performance: 80, pickups: 32, zone: 'Zone 3', email: 'naveen.k@company.com', phone: '+91 9876543221', punctuality: 76, completion: 85, quality: 80, rating: 4.0 },
+            { id: 'WRK-013', name: 'Sanjay Gupta', status: 'inactive', performance: 74, pickups: 27, zone: 'Zone 4', email: 'sanjay.g@company.com', phone: '+91 9876543222', punctuality: 70, completion: 78, quality: 74, rating: 3.6 },
+            { id: 'WRK-014', name: 'Varun Singh', status: 'inactive', performance: 71, pickups: 24, zone: 'Zone 1', email: 'varun.s@company.com', phone: '+91 9876543223', punctuality: 67, completion: 74, quality: 71, rating: 3.4 },
+            { id: 'WRK-015', name: 'Nikhil Deshmukh', status: 'inactive', performance: 75, pickups: 26, zone: 'Zone 2', email: 'nikhil.d@company.com', phone: '+91 9876543224', punctuality: 71, completion: 79, quality: 75, rating: 3.7 },
+        ];
+
+        // Function to render table
+        function renderTable(filteredWorkers) {
+            const tbody = document.getElementById('workersTableBody');
+            tbody.innerHTML = '';
+
+            filteredWorkers.forEach(worker => {
+                const isActive = worker.status === 'active';
+                const rowColor = isActive 
+                    ? 'border-blue-700/50 bg-blue-900/20 hover:bg-blue-900/30'
+                    : 'border-slate-700/50 bg-slate-700/20 hover:bg-slate-700/30';
+                
+                const statusBadgeColor = isActive
+                    ? 'bg-green-900/40 text-green-400 border-green-800'
+                    : 'bg-slate-700/40 text-slate-400 border-slate-600';
+
+                const performanceColor = worker.performance >= 90 
+                    ? 'text-green-400'
+                    : worker.performance >= 85
+                    ? 'text-blue-400'
+                    : worker.performance >= 75
+                    ? 'text-yellow-400'
+                    : 'text-red-400';
+
+                const performanceBar = worker.performance >= 90 
+                    ? 'bg-green-500'
+                    : worker.performance >= 85
+                    ? 'bg-blue-500'
+                    : worker.performance >= 75
+                    ? 'bg-yellow-500'
+                    : 'bg-red-500';
+
+                const row = `
+                    <tr class="border-b ${rowColor} transition">
+                        <td class="py-4 px-4">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 ${isActive ? 'bg-green-500' : 'bg-slate-500'} rounded-full ${isActive ? 'animate-pulse' : ''}"></span>
+                                <span class="text-xs font-semibold ${isActive ? 'text-green-400' : 'text-slate-400'}">${isActive ? 'ACTIVE' : 'OFFLINE'}</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4 font-medium ${isActive ? 'text-blue-300' : 'text-slate-400'}">${worker.id}</td>
+                        <td class="py-4 px-4">
+                            <div>
+                                <p class="font-semibold ${isActive ? 'text-slate-100' : 'text-slate-400'}">${worker.name}</p>
+                                <p class="text-xs ${isActive ? 'text-slate-400' : 'text-slate-500'}">${worker.zone}</p>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4">
+                            <div class="flex items-center gap-3">
+                                <div class="flex-1 w-24">
+                                    <div class="w-full bg-slate-700 rounded-full h-2">
+                                        <div class="${performanceBar} h-2 rounded-full" style="width: ${worker.performance}%"></div>
+                                    </div>
+                                </div>
+                                <span class="text-sm font-bold ${performanceColor}">${worker.performance}%</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4">
+                            <div class="text-xs">
+                                <p class="font-semibold ${isActive ? 'text-blue-300' : 'text-slate-400'}">${worker.pickups} Pickups</p>
+                                <p class="text-slate-500 mt-1">This Month</p>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4">
+                            <button class="px-3 py-1.5 rounded text-xs font-semibold ${isActive ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-slate-600 hover:bg-slate-500 text-slate-200'} transition" data-worker="${worker.id}">
+                                ${isActive ? 'View Report' : 'Activate'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            // Update counts
+            const activeCount = filteredWorkers.filter(w => w.status === 'active').length;
+            const inactiveCount = filteredWorkers.filter(w => w.status === 'inactive').length;
+            document.getElementById('activeCount').textContent = activeCount;
+            document.getElementById('inactiveCount').textContent = inactiveCount;
+        }
+
+        // Initial render
+        renderTable(workersData);
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('keyup', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = workersData.filter(worker =>
+                worker.id.toLowerCase().includes(searchTerm) ||
+                worker.name.toLowerCase().includes(searchTerm)
+            );
+            renderTable(filtered);
+        });
+
+        // Filter buttons
+        document.querySelectorAll('[data-filter]').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('[data-filter]').forEach(b => {
+                    b.classList.remove('bg-blue-600', 'text-white');
+                    b.classList.add('bg-slate-700', 'text-slate-300');
+                });
+                this.classList.remove('bg-slate-700', 'text-slate-300');
+                this.classList.add('bg-blue-600', 'text-white');
+
+                const filter = this.getAttribute('data-filter');
+                let filtered = workersData;
+
+                if (filter === 'active') {
+                    filtered = workersData.filter(worker => worker.status === 'active');
+                } else if (filter === 'inactive') {
+                    filtered = workersData.filter(worker => worker.status === 'inactive');
+                }
+
+                renderTable(filtered);
+            });
+        });
+
+        // Action buttons
+        document.addEventListener('click', function(e) {
+            if (e.target.hasAttribute('data-worker')) {
+                const workerId = e.target.getAttribute('data-worker');
+                const worker = workersData.find(w => w.id === workerId);
+                if (worker) {
+                    if (worker.status === 'active') {
+                        showWorkerReport(worker);
+                    } else {
+                        alert(`Activating worker ${worker.name} (${worker.id})...`);
+                        worker.status = 'active';
+                        renderTable(workersData);
+                    }
+                }
+            }
+        });
+
+        // Function to show worker report modal
+        function showWorkerReport(worker) {
+            const modal = document.getElementById('reportModal');
+            const performanceColor = worker.performance >= 90 
+                ? 'text-green-400'
+                : worker.performance >= 85
+                ? 'text-blue-400'
+                : worker.performance >= 75
+                ? 'text-yellow-400'
+                : 'text-red-400';
+
+            const performanceBar = worker.performance >= 90 
+                ? 'bg-green-500'
+                : worker.performance >= 85
+                ? 'bg-blue-500'
+                : worker.performance >= 75
+                ? 'bg-yellow-500'
+                : 'bg-red-500';
+
+            // Get current time
+            const now = new Date();
+            const timeString = now.toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+            });
+
+            // Populate modal
+            document.getElementById('reportWorkerName').textContent = worker.name;
+            document.getElementById('reportWorkerId').textContent = `ID: ${worker.id}`;
+            document.getElementById('reportWorkerStatus').textContent = worker.status.toUpperCase();
+            document.getElementById('reportWorkerStatus').className = worker.status === 'active' 
+                ? 'px-3 py-1 rounded-full text-xs font-semibold bg-green-900/40 text-green-400 border border-green-800'
+                : 'px-3 py-1 rounded-full text-xs font-semibold bg-slate-700/40 text-slate-400 border border-slate-600';
+            
+            document.getElementById('reportLastUpdated').textContent = timeString;
+            document.getElementById('reportPerformanceScore').textContent = `${worker.performance}%`;
+            document.getElementById('reportPerformanceScore').className = `text-3xl font-bold ${performanceColor}`;
+            document.getElementById('reportPerformanceBar').style.width = `${worker.performance}%`;
+            document.getElementById('reportPerformanceBar').className = `${performanceBar} h-2 rounded-full`;
+            
+            document.getElementById('reportPickups').textContent = worker.pickups;
+            document.getElementById('reportZone').textContent = worker.zone;
+            
+            document.getElementById('reportPunctuality').textContent = `${worker.punctuality}%`;
+            document.getElementById('reportPunctualityBar').style.width = `${worker.punctuality}%`;
+            
+            document.getElementById('reportCompletion').textContent = `${worker.completion}%`;
+            document.getElementById('reportCompletionBar').style.width = `${worker.completion}%`;
+            
+            document.getElementById('reportQuality').textContent = `${worker.quality}%`;
+            document.getElementById('reportQualityBar').style.width = `${worker.quality}%`;
+            
+            document.getElementById('reportRating').textContent = `${worker.rating}/5.0`;
+            
+            document.getElementById('reportEmail').textContent = worker.email;
+            document.getElementById('reportPhone').textContent = worker.phone;
+            document.getElementById('reportZoneDetail').textContent = `${worker.zone} - Downtown Area`;
+
+            // Show modal
+            modal.classList.remove('hidden');
+        }
+
+        // Close modal
+        document.getElementById('closeReportBtn').addEventListener('click', function() {
+            document.getElementById('reportModal').classList.add('hidden');
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('reportModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

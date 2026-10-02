@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SilentStorm - Admin Command Center (Dark Mode)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <style>
+        .sidebar-gradient {
+            background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+        }
+        /* Custom Scrollbar tailored for dark mode */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+        /* Light theme styles */
+        body.light-theme {
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        body.light-theme .sidebar-gradient {
+            background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+            border-right-color: #e2e8f0;
+        }
+        body.light-theme .sidebar-gradient .text-white {
+            color: #1e293b !important;
+        }
+        body.light-theme .sidebar-gradient .text-slate-400 {
+            color: #64748b !important;
+        }
+        body.light-theme .bg-slate-800 {
+            background-color: #ffffff !important;
+            border-color: #e2e8f0 !important;
+        }
+        body.light-theme .bg-slate-900 {
+            background-color: #f1f5f9 !important;
+        }
+        body.light-theme .text-slate-100 {
+            color: #1e293b !important;
+        }
+        body.light-theme .text-slate-300 {
+            color: #475569 !important;
+        }
+        body.light-theme .text-slate-400 {
+            color: #78909c !important;
+        }
+        body.light-theme .text-slate-500 {
+            color: #90a4ae !important;
+        }
+        body.light-theme .border-slate-700 {
+            border-color: #e2e8f0 !important;
+        }
+        body.light-theme .border-slate-800 {
+            border-color: #e2e8f0 !important;
+        }
+        /* Map Container Styles */
+        #binMap {
+            width: 100%;
+            height: 500px;
+            border-radius: 1rem;
+            border: 1px solid #334155;
+        }
+        .leaflet-container {
+            border-radius: 1rem;
+        }
+        .bin-marker-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .bin-marker-icon.normal {
+            background-color: #3b82f6;
+        }
+        .bin-marker-icon.warning {
+            background-color: #f59e0b;
+        }
+        .bin-marker-icon.critical {
+            background-color: #ef4444;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 0.75rem;
+            background-color: #1e293b;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+        }
+        .leaflet-popup-content {
+            margin: 0;
+            font-size: 12px;
+        }
+        .leaflet-popup-tip {
+            background-color: #1e293b;
+            border-color: #475569;
+        }
+        .map-legend {
+            background: white;
+            padding: 15px;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            font-size: 12px;
+        }
+        body.light-theme #binMap {
+            border-color: #cbd5e1;
+        }
+    </style>
+
+</head>
+<body class="bg-slate-900 font-sans text-slate-100 h-screen overflow-hidden flex">
+
+    <aside class="w-64 sidebar-gradient text-white flex flex-col flex-shrink-0 transition-all duration-300 z-20 shadow-xl border-r border-slate-800">
+        
+        <div class="p-6 border-b border-slate-800 bg-slate-900/50">
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <img src="https://ui-avatars.com/api/?name={{ (user.name if user else 'Admin User')|replace(' ', '+') }}&background=3b82f6&color=fff" alt="Admin" class="w-12 h-12 rounded-full border-2 border-green-500">
+                    <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-slate-900 rounded-full"></span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-white">{{ user.name if user else 'Admin User' }}</h3>
+                    <p class="text-xs text-slate-400">Super Admin</p>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-2">
+            
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Management</div>
+            
+            <a href="/admindashboard" class="flex items-center gap-3 px-4 py-3 bg-blue-600 rounded-lg text-white shadow-lg shadow-blue-900/20 hover:bg-blue-500 transition-all group">
+                <i class="fa-solid fa-chart-line text-lg"></i>
+                <span class="font-medium">Dashboard</span>
+            </a>
+
+            <a href="/addbins" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-trash-can text-lg text-green-400 group-hover:text-green-300"></i>
+                <span class="font-medium">Add New Bin</span>
+            </a>
+
+            <a href="/removebins" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-ban text-lg text-red-400 group-hover:text-red-300"></i>
+                <span class="font-medium">Remove Bin</span>
+            </a>
+
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-2 px-3">Intelligence</div>
+
+            <a href="/analysis" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-brain text-lg text-purple-400 group-hover:text-purple-300"></i>
+                <span class="font-medium">Analysis & AI</span>
+            </a>
+
+            <a href="/alerts" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <div class="relative">
+                    <i class="fa-solid fa-bell text-lg text-yellow-400 group-hover:text-yellow-300"></i>
+                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                </div>
+                <span class="font-medium">Alerts</span>
+            </a>
+
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-2 px-3">System</div>
+
+            <a href="/settings" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all group">
+                <i class="fa-solid fa-gear text-lg text-slate-400 group-hover:text-white"></i>
+                <span class="font-medium">Settings</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <a href="/" onclick="window.location.href='/'; return false;" class="flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-slate-800 hover:text-red-300 rounded-lg transition-all cursor-pointer">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="font-medium">Log Out</span>
+            </a>
+        </div>
+    </aside>
+
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        
+        <header class="h-20 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-8 z-10 shadow-sm">
+            
+            <h1 class="text-2xl font-bold text-white">
+                <span class="text-blue-500">Overview</span>
+            </h1>
+
+            <div class="flex-1 max-w-2xl mx-12">
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-magnifying-glass text-slate-400 group-focus-within:text-blue-400 transition-colors"></i>
+                    </div>
+                    <input type="text" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-full py-2.5 pl-12 pr-4 text-sm text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="Search by Bin ID (e.g., BIN-402) or Location (e.g., Rajapeth)...">
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="hidden xl:block text-sm text-slate-400">Welcome, {{ user.name if user else 'Admin' }}</div>
+                <button class="p-3 rounded-full bg-slate-700 text-blue-400 hover:bg-slate-600 transition-colors tooltip" title="Refresh Data">
+                    <i class="fa-solid fa-arrows-rotate animate-spin-slow"></i>
+                </button>
+                <div class="h-8 w-px bg-slate-700"></div>
+                <button class="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-md hover:bg-blue-500 transition-transform active:scale-95">
+                    <i class="fa-solid fa-file-export mr-2"></i> Export Report
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 bg-slate-900">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                
+                <a href="/bins" class="bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-slate-500 transition-colors relative overflow-hidden cursor-pointer hover:shadow-lg hover:shadow-blue-900/20">
+                    <div class="absolute right-0 top-0 p-4 opacity-5">
+                        <i class="fa-solid fa-trash-can text-6xl text-white"></i>
+                    </div>
+                    <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-wider">Total Bins</h3>
+                    <div class="mt-2 flex items-baseline gap-2">
+                        <span class="text-4xl font-extrabold text-white">128</span>
+                        <span class="text-sm text-green-400 font-medium"><i class="fa-solid fa-arrow-up"></i> 4 new</span>
+                    </div>
+                    <div class="w-full bg-slate-700 rounded-full h-1.5 mt-4">
+                        <div class="bg-blue-500 h-1.5 rounded-full" style="width: 85%"></div>
+                    </div>
+                </a>
+
+                <a href="/bins?type=full" class="bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-slate-500 transition-colors relative overflow-hidden cursor-pointer hover:shadow-lg hover:shadow-red-900/20">
+                    <div class="absolute right-0 top-0 p-4 opacity-10">
+                        <i class="fa-solid fa-triangle-exclamation text-6xl text-red-500"></i>
+                    </div>
+                    <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-wider">Full Bins (>90%)</h3>
+                    <div class="mt-2 flex items-baseline gap-2">
+                        <span class="text-4xl font-extrabold text-red-400">12</span>
+                        <span class="text-sm text-red-400 font-medium">Action Required</span>
+                    </div>
+                    <div class="w-full bg-slate-700 rounded-full h-1.5 mt-4">
+                        <div class="bg-red-500 h-1.5 rounded-full animate-pulse" style="width: 15%"></div>
+                    </div>
+                </a>
+
+                <a href="/workers" class="bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-slate-500 transition-colors relative overflow-hidden cursor-pointer hover:shadow-lg hover:shadow-orange-900/20">
+                    <div class="absolute right-0 top-0 p-4 opacity-10">
+                        <i class="fa-solid fa-truck-fast text-6xl text-orange-500"></i>
+                    </div>
+                    <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-wider">Active Workers</h3>
+                    <div class="mt-2 flex items-baseline gap-2">
+                        <span class="text-4xl font-extrabold text-white">8</span>
+                        <span class="text-sm text-slate-500">/ 15 Total</span>
+                    </div>
+                    <div class="flex -space-x-2 mt-4">
+                        <img class="w-8 h-8 rounded-full border-2 border-slate-800" src="https://ui-avatars.com/api/?name=Ramesh&bg=random" alt="">
+                        <img class="w-8 h-8 rounded-full border-2 border-slate-800" src="https://ui-avatars.com/api/?name=Suresh&bg=random" alt="">
+                        <img class="w-8 h-8 rounded-full border-2 border-slate-800" src="https://ui-avatars.com/api/?name=Jay&bg=random" alt="">
+                        <div class="w-8 h-8 rounded-full border-2 border-slate-800 bg-slate-700 flex items-center justify-center text-xs text-slate-300">+5</div>
+                    </div>
+                </a>
+
+                <div class="bg-gradient-to-br from-green-600 to-emerald-800 p-6 rounded-2xl shadow-lg text-white relative overflow-hidden border border-green-700">
+                    <div class="absolute right-0 top-0 p-4 opacity-20">
+                        <i class="fa-solid fa-heart-pulse text-6xl text-white"></i>
+                    </div>
+                    <h3 class="text-green-100 text-sm font-semibold uppercase tracking-wider">City Health Score</h3>
+                    <div class="mt-2 flex items-baseline gap-2">
+                        <span class="text-4xl font-extrabold">94%</span>
+                    </div>
+                    <p class="text-xs text-green-200 mt-2 opacity-90">Based on bin overflow duration & collection efficiency.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <div class="lg:col-span-2 space-y-6">
+                    
+                    <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-bold text-white text-lg"><i class="fa-solid fa-circle-exclamation text-red-500 mr-2"></i> Critical Bins (Overflowing)</h3>
+                            <button class="text-sm text-blue-400 font-medium hover:underline">View All</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-slate-400 text-xs uppercase border-b border-slate-700">
+                                        <th class="py-3 font-semibold">Bin ID</th>
+                                        <th class="py-3 font-semibold">Location</th>
+                                        <th class="py-3 font-semibold">Fill Level</th>
+                                        <th class="py-3 font-semibold">Last Cleaned</th>
+                                        <th class="py-3 font-semibold">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-sm">
+                                    <tr class="border-b border-slate-700/50 hover:bg-slate-700/30 transition">
+                                        <td class="py-4 font-medium text-slate-200">BIN-A04</td>
+                                        <td class="py-4 text-slate-400">Gandhi Square, Zone 2</td>
+                                        <td class="py-4"><span class="px-2 py-1 rounded-full bg-red-900/40 text-red-400 border border-red-800 text-xs font-bold">98%</span></td>
+                                        <td class="py-4 text-slate-500">4 hours ago</td>
+                                        <td class="py-4">
+                                            <button class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs hover:bg-blue-500 transition assign-btn" data-bin="BIN-A04" data-location="Gandhi Square, Zone 2">Assign</button>
+                                        </td>
+                                    </tr>
+                                    <tr class="border-b border-slate-700/50 hover:bg-slate-700/30 transition">
+                                        <td class="py-4 font-medium text-slate-200">BIN-C12</td>
+                                        <td class="py-4 text-slate-400">Main Market, Zone 1</td>
+                                        <td class="py-4"><span class="px-2 py-1 rounded-full bg-red-900/40 text-red-400 border border-red-800 text-xs font-bold">92%</span></td>
+                                        <td class="py-4 text-slate-500">6 hours ago</td>
+                                        <td class="py-4">
+                                            <button class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs hover:bg-blue-500 transition assign-btn" data-bin="BIN-C12" data-location="Main Market, Zone 1">Assign</button>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-700/30 transition">
+                                        <td class="py-4 font-medium text-slate-200">BIN-F09</td>
+                                        <td class="py-4 text-slate-400">Bus Stand, Zone 3</td>
+                                        <td class="py-4"><span class="px-2 py-1 rounded-full bg-orange-900/40 text-orange-400 border border-orange-800 text-xs font-bold">88%</span></td>
+                                        <td class="py-4 text-slate-500">2 hours ago</td>
+                                        <td class="py-4">
+                                            <button class="bg-slate-700 text-slate-300 px-3 py-1.5 rounded text-xs hover:bg-slate-600 transition">Queue</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- City Map Section -->
+                    <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-bold text-white text-lg"><i class="fa-solid fa-map-location-dot text-green-500 mr-2"></i> Amravati City Map</h3>
+                            <div class="flex gap-2">
+                                <button id="zoneFilter" class="text-xs px-3 py-1 rounded bg-slate-700 text-slate-300 hover:bg-slate-600 transition">All Zones</button>
+                                <button class="text-xs px-3 py-1 rounded bg-blue-600 text-white">Map View</button>
+                            </div>
+                        </div>
+                        <div id="binMap" class="w-full h-96 rounded-lg border border-slate-600"></div>
+                        <div class="mt-4 flex flex-wrap gap-2 text-xs">
+                            <span class="flex items-center gap-1"><div class="w-3 h-3 bg-red-500 rounded"></div> Critical</span>
+                            <span class="flex items-center gap-1"><div class="w-3 h-3 bg-yellow-500 rounded"></div> Warning</span>
+                            <span class="flex items-center gap-1"><div class="w-3 h-3 bg-green-500 rounded"></div> Normal</span>
+                            <span class="ml-4 text-slate-400">Click bin markers for navigation options</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6">
+                            <h3 class="font-bold text-white mb-4">Sensor Status</h3>
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+                                    <span class="text-sm font-medium text-slate-300">Online</span>
+                                </div>
+                                <span class="font-bold text-white">124</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 bg-slate-600 rounded-full"></span>
+                                    <span class="text-sm font-medium text-slate-500">Offline/Fault</span>
+                                </div>
+                                <span class="font-bold text-red-400">4</span>
+                            </div>
+                            <div class="mt-4 text-xs text-slate-300 bg-slate-900 border border-slate-700 p-3 rounded-lg">
+                                <i class="fa-solid fa-triangle-exclamation mr-1 text-yellow-500"></i> Check connectivity in Zone 4
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6">
+                            <h3 class="font-bold text-white mb-4">Quick Actions</h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button class="p-3 rounded-xl border border-blue-900/50 bg-blue-900/20 text-blue-400 hover:bg-blue-900/40 transition flex flex-col items-center gap-2 text-center">
+                                    <i class="fa-solid fa-truck-arrow-right text-lg"></i>
+                                    <span class="text-xs font-bold">Deploy Truck</span>
+                                </button>
+                                <button class="p-3 rounded-xl border border-green-900/50 bg-green-900/20 text-green-400 hover:bg-green-900/40 transition flex flex-col items-center gap-2 text-center">
+                                    <i class="fa-solid fa-route text-lg"></i>
+                                    <span class="text-xs font-bold">Optimize Routes</span>
+                                </button>
+                                <button class="p-3 rounded-xl border border-purple-900/50 bg-purple-900/20 text-purple-400 hover:bg-purple-900/40 transition flex flex-col items-center gap-2 text-center">
+                                    <i class="fa-solid fa-bullhorn text-lg"></i>
+                                    <span class="text-xs font-bold">Public Alert</span>
+                                </button>
+                                <button class="p-3 rounded-xl border border-slate-700 bg-slate-700 text-slate-300 hover:bg-slate-600 transition flex flex-col items-center gap-2 text-center">
+                                    <i class="fa-solid fa-file-pdf text-lg"></i>
+                                    <span class="text-xs font-bold">Download Log</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hidden xl:flex flex-col space-y-6 w-[400px]">
+                    
+                    <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6 flex-1 max-h-[400px] flex flex-col">
+                        <h3 class="font-bold text-white mb-4"><i class="fa-solid fa-users-gear text-orange-400 mr-2"></i>Pending Worker Requests</h3>
+                        <div id="workerRequestsContainer" class="space-y-4 overflow-y-auto flex-1 pr-2">
+                            <p class="text-xs text-slate-500 text-center py-4">Loading requests...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6 flex-1 max-h-[400px] flex flex-col">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-white"><i class="fa-solid fa-clipboard-list text-blue-400 mr-2"></i>Citizen QR Complaints</h3>
+                        </div>
+                        <div id="adminComplaintsContainer" class="space-y-4 overflow-y-auto flex-1 pr-2">
+                            <p class="text-xs text-slate-500 text-center py-4">Loading complaints...</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Apply saved theme on page load
+        const savedTheme = localStorage.getItem('currentTheme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-theme');
+        }
+
+        // Update total bins count based on newly added and removed bins
+        const addedBins = JSON.parse(localStorage.getItem('addedBins')) || [];
+        const removedBins = JSON.parse(localStorage.getItem('removedBins')) || [];
+        const baseBinsCount = 128;
+        const totalBinsCount = baseBinsCount + addedBins.length - removedBins.length;
+        
+        // Update the Total Bins card
+        const totalBinsElement = document.querySelector('a[href="/bins"] .text-4xl');
+        if (totalBinsElement) {
+            totalBinsElement.textContent = totalBinsCount;
+        }
+
+        // Optional: Show a notification if bins were just added
+        if (addedBins.length > 0) {
+            const recentlyAdded = localStorage.getItem('recentlyAdded');
+            if (recentlyAdded === 'true') {
+                console.log(`${addedBins.length} new bins added to the system!`);
+                localStorage.setItem('recentlyAdded', 'false');
+            }
+        }
+    </script>
+
+    <!-- Assign Task Modal -->
+    <div id="assignModal" class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 hidden z-50">
+        <div class="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Assign Task to Worker</h3>
+                <button id="closeAssignModal" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+            <form id="assignForm" class="space-y-3">
+                <div>
+                    <label class="text-sm text-slate-300">Bin ID</label>
+                    <input id="assignBin" class="w-full mt-1 p-2 bg-slate-800 border border-slate-700 rounded text-slate-100" readonly>
+                </div>
+                <div>
+                    <label class="text-sm text-slate-300">Location</label>
+                    <input id="assignLocation" class="w-full mt-1 p-2 bg-slate-800 border border-slate-700 rounded text-slate-100">
+                </div>
+                <div>
+                    <label class="text-sm text-slate-300">Worker ID</label>
+                    <input id="assignWorkerId" class="w-full mt-1 p-2 bg-slate-800 border border-slate-700 rounded text-slate-100" placeholder="e.g. W001" required>
+                </div>
+                <div>
+                    <label class="text-sm text-slate-300">Worker Name</label>
+                    <input id="assignWorkerName" class="w-full mt-1 p-2 bg-slate-800 border border-slate-700 rounded text-slate-100" placeholder="e.g. Ramesh K." required>
+                </div>
+                <div>
+                    <label class="text-sm text-slate-300">Scheduled Time</label>
+                    <input id="assignTime" type="datetime-local" class="w-full mt-1 p-2 bg-slate-800 border border-slate-700 rounded text-slate-100" required>
+                </div>
+                <div class="flex gap-3 pt-3">
+                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 py-2 rounded-lg font-bold">Assign Task</button>
+                    <button type="button" id="cancelAssign" class="flex-1 bg-slate-700 hover:bg-slate-600 py-2 rounded-lg">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Assignment modal logic
+        const assignModal = document.getElementById('assignModal');
+        const assignForm = document.getElementById('assignForm');
+        const closeAssignModal = document.getElementById('closeAssignModal');
+        const cancelAssign = document.getElementById('cancelAssign');
+
+        function openAssignModal(prefill = {}) {
+            document.getElementById('assignBin').value = prefill.bin || '';
+            document.getElementById('assignLocation').value = prefill.location || '';
+            document.getElementById('assignWorkerId').value = prefill.workerId || '';
+            document.getElementById('assignWorkerName').value = prefill.workerName || '';
+            document.getElementById('assignTime').value = prefill.time || '';
+            assignModal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            assignModal.classList.add('hidden');
+            assignForm.reset();
+        }
+
+        closeAssignModal.addEventListener('click', closeModal);
+        cancelAssign.addEventListener('click', closeModal);
+
+        // wire assign buttons in table
+        document.querySelectorAll('.assign-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const bin = btn.getAttribute('data-bin') || '';
+                const location = btn.getAttribute('data-location') || '';
+                openAssignModal({ bin, location });
+            });
+        });
+
+        // quick assign from sidebar
+        const quickAssignBtn = document.getElementById('quickAssignBtn');
+        if (quickAssignBtn) {
+            quickAssignBtn.addEventListener('click', () => {
+                const val = document.getElementById('quickDriverSelect').value; // format: id|name
+                if (!val) { alert('Select a driver first'); return; }
+                const [id, name] = val.split('|');
+                openAssignModal({ workerId: id, workerName: name.trim() });
+            });
+        }
+
+        assignForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const bin = document.getElementById('assignBin').value.trim();
+            const location = document.getElementById('assignLocation').value.trim();
+            const workerId = document.getElementById('assignWorkerId').value.trim();
+            const workerName = document.getElementById('assignWorkerName').value.trim();
+            const time = document.getElementById('assignTime').value;
+
+            if (!workerId || !workerName || !location || !time) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            const tasks = JSON.parse(localStorage.getItem('assignedTasks') || '[]');
+            const task = {
+                id: 'T' + Date.now(),
+                bin,
+                location,
+                workerId,
+                workerName,
+                scheduledAt: time,
+                assignedAt: new Date().toISOString(),
+                status: 'assigned'
+            };
+            tasks.push(task);
+            localStorage.setItem('assignedTasks', JSON.stringify(tasks));
+
+            alert('Task assigned to ' + workerName);
+            closeModal();
+        });
+
+        // Initialize Map
+        let map;
+        let markers = [];
+        let zones = [];
+
+        const centerPoint = [20.9374, 77.7796];
+        const radLines = [
+            { zone: '1', name: 'Zone 1 (Market)', startAngle: 300, endAngle: 360, color: '#3b82f6' },
+            { zone: '2', name: 'Zone 2 (Residential)', startAngle: 0, endAngle: 60, color: '#10b981' },
+            { zone: '3', name: 'Zone 3 (Commercial)', startAngle: 60, endAngle: 120, color: '#f59e0b' },
+            { zone: '4', name: 'Zone 4 (Industrial)', startAngle: 120, endAngle: 180, color: '#ef4444' },
+            { zone: '5', name: 'Zone 5 (Educational)', startAngle: 180, endAngle: 240, color: '#8b5cf6' },
+            { zone: '6', name: 'Zone 6 (Hospital)', startAngle: 240, endAngle: 300, color: '#06b6d4' }
+        ];
+
+        function getPointOnCircle(center, angleDeg, radius) {
+            const angleRad = angleDeg * (Math.PI / 180);
+            return [
+                center[0] + radius * Math.cos(angleRad),
+                center[1] + radius * Math.sin(angleRad)
+            ];
+        }
+
+        function initMap() {
+            // Amravati coordinates
+            const amravatiCenter = [20.9374, 77.7796];
+            
+            map = L.map('binMap').setView(amravatiCenter, 12);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            const radius = 0.08;
+
+            // Add zone divider lines
+            radLines.forEach((zone, index) => {
+                // draw a line from center point to the boundary of this zone's start angle
+                const startPointLine = getPointOnCircle(centerPoint, zone.startAngle, radius);
+                const line = L.polyline([centerPoint, startPointLine], {
+                    color: zone.color,
+                    weight: 3,
+                    opacity: 0.8
+                }).addTo(map);
+                
+                line.bindTooltip(zone.name, { direction: 'center' });
+                zones.push({ name: zone.name, color: zone.color, line: line, index: index + 1 });
+            });
+
+            loadBinsOnMap();
+        }
+
+        function loadBinsOnMap() {
+            // Clear existing markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+
+            const defaultBins = [
+                { id: 'BIN-A04', location: 'Gandhi Square', zone: 'Zone 2', severity: 'critical', fillLevel: 98, lat: 20.932, lng: 77.782 },
+                { id: 'BIN-C12', location: 'Main Market', zone: 'Zone 1', severity: 'critical', fillLevel: 92, lat: 20.935, lng: 77.775 },
+                { id: 'BIN-F09', location: 'Bus Stand', zone: 'Zone 3', severity: 'warning', fillLevel: 88, lat: 20.945, lng: 77.785 },
+                { id: 'BIN-B03', location: 'Rajapeth Garden', zone: 'Zone 1', severity: 'normal', fillLevel: 35, lat: 20.930, lng: 77.770 },
+                { id: 'BIN-D07', location: 'Cotton Market', zone: 'Zone 4', severity: 'warning', fillLevel: 75, lat: 20.905, lng: 77.765 },
+                { id: 'BIN-E01', location: 'Jaistambh Square', zone: 'Zone 2', severity: 'normal', fillLevel: 20, lat: 20.928, lng: 77.780 },
+                { id: 'BIN-G11', location: 'Shivaji Nagar', zone: 'Zone 5', severity: 'critical', fillLevel: 95, lat: 20.970, lng: 77.800 },
+                { id: 'BIN-H05', location: 'MIDC Area', zone: 'Zone 6', severity: 'normal', fillLevel: 50, lat: 20.950, lng: 77.790 },
+                { id: 'BIN-I08', location: 'Hanuman Nagar', zone: 'Zone 3', severity: 'warning', fillLevel: 70, lat: 20.940, lng: 77.795 },
+                { id: 'BIN-J02', location: 'Morshi Road', zone: 'Zone 6', severity: 'normal', fillLevel: 40, lat: 20.955, lng: 77.805 }
+            ];
+
+            let allBins = [...defaultBins];
+
+            try {
+                // Get all custom bins safely
+                const addedBins = JSON.parse(localStorage.getItem('addedBins')) || [];
+                const removedBins = JSON.parse(localStorage.getItem('removedBins')) || [];
+                
+                // Add custom bins
+                addedBins.forEach(bin => {
+                    if (bin && bin.id && !allBins.find(b => b.id === bin.id)) {
+                        const zoneInfo = radLines.find(z => bin.zone && z.name.includes(bin.zone));
+                        if (zoneInfo) {
+                            const angle = zoneInfo.startAngle + Math.random() * (zoneInfo.endAngle - zoneInfo.startAngle);
+                            const r = 0.005 + Math.random() * 0.03;
+                            const offset = getPointOnCircle([0,0], angle, r);
+                            allBins.push({
+                                id: bin.id,
+                                location: bin.location || "Unknown location",
+                                zone: bin.zone,
+                                severity: 'normal',
+                                fillLevel: 15,
+                                lat: centerPoint[0] + offset[0],
+                                lng: centerPoint[1] + offset[1]
+                            });
+                        } else {
+                            allBins.push({
+                                id: bin.id,
+                                location: bin.location || "Unknown location",
+                                zone: bin.zone || "Unknown",
+                                severity: 'normal',
+                                fillLevel: 15,
+                                lat: 20.9374,
+                                lng: 77.7796
+                            });
+                        }
+                    }
+                });
+
+                // Remove removed bins
+                allBins = allBins.filter(bin => !removedBins.includes(bin.id));
+            } catch (e) {
+                console.error("Local storage sync error. Continuing with default bins.", e);
+            }
+
+            // Add markers
+            allBins.forEach(bin => {
+                const severityColor = bin.severity === 'critical' ? '#ef4444' : 
+                                    bin.severity === 'warning' ? '#f59e0b' : '#10b981';
+                
+                const marker = L.marker([bin.lat, bin.lng], {
+                    icon: L.divIcon({
+                        className: 'bin-marker-icon',
+                        html: `<div style="background-color: ${severityColor};" class="bin-marker-icon ${bin.severity}">${bin.id.split('-')[1]}</div>`
+                    })
+                }).addTo(map);
+
+                marker.bindPopup(`
+                    <div class="text-center">
+                        <h4 class="font-bold">${bin.id}</h4>
+                        <p class="text-sm">${bin.location}</p>
+                        <p class="text-xs text-gray-600">${bin.zone}</p>
+                        <p class="text-xs">Fill: ${bin.fillLevel}%</p>
+                        <div class="mt-2 space-y-1">
+                            <button onclick="navigateToBin(${bin.lat}, ${bin.lng}, '${bin.location}')" class="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600">
+                                <i class="fa-solid fa-route mr-1"></i> Navigate
+                            </button>
+                        </div>
+                    </div>
+                `);
+
+                markers.push(marker);
+            });
+        }
+
+        function navigateToBin(lat, lng, location) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    
+                    // Open Google Maps with directions
+                    const url = `https://www.google.com/maps/dir/${userLat},${userLng}/${lat},${lng}`;
+                    window.open(url, '_blank');
+                }, function() {
+                    // Fallback: open Google Maps to destination
+                    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                    window.open(url, '_blank');
+                });
+            } else {
+                alert('Geolocation is not supported by this browser.');
+            }
+        }
+
+        // Fetch Admin Data
+        function loadAdminData() {
+            // Worker Requests
+            fetch('/api/admin/worker_requests')
+                .then(r => r.json())
+                .then(reqs => {
+                    const container = document.getElementById('workerRequestsContainer');
+                    const pending = reqs.filter(r => r.status === 'Pending');
+                    if (pending.length === 0) {
+                        container.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">No pending requests</p>';
+                        return;
+                    }
+                    container.innerHTML = pending.map(r => `
+                        <div class="bg-slate-700 p-3 rounded-lg border border-slate-600 flex justify-between items-center">
+                            <div>
+                                <p class="text-sm font-bold text-slate-100">${r.mobile}</p>
+                                <p class="text-xs text-slate-400">Zone ${r.zone}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="approveWorker('${r.mobile}')" class="bg-green-600 hover:bg-green-500 text-white p-1.5 rounded text-xs" title="Approve"><i class="fa-solid fa-check"></i></button>
+                                <button onclick="rejectWorker('${r.mobile}')" class="bg-red-600 hover:bg-red-500 text-white p-1.5 rounded text-xs" title="Reject"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+
+            // Complaints
+            fetch('/api/complaints')
+                .then(r => r.json())
+                .then(comps => {
+                    const container = document.getElementById('adminComplaintsContainer');
+                    const open = comps.filter(c => c.status === 'Open');
+                    if (open.length === 0) {
+                        container.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">No active complaints</p>';
+                        return;
+                    }
+                    container.innerHTML = open.map(c => `
+                        <div class="bg-slate-700 p-3 rounded-lg border border-slate-600 flex justify-between items-center">
+                            <div>
+                                <p class="text-sm font-bold text-slate-100">${c.bin_id} (Zone ${c.bin_zone})</p>
+                                <p class="text-[10px] text-slate-400">Reported: ${new Date(c.timestamp).toLocaleString()}</p>
+                            </div>
+                            <span class="text-xs font-bold px-2 py-1 rounded bg-orange-900 border border-orange-700 text-orange-400">QR Alert</span>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        function approveWorker(mobile) {
+            fetch('/api/admin/approve_worker/' + mobile, { method: 'POST' })
+                .then(r => r.json())
+                .then(() => loadAdminData());
+        }
+
+        function rejectWorker(mobile) {
+            fetch('/api/admin/reject_worker/' + mobile, { method: 'POST' })
+                .then(r => r.json())
+                .then(() => loadAdminData());
+        }
+
+        // Initialize map and data when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            loadAdminData();
+        });
+    </script>
+</body>
+</html>

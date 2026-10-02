@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Smart Waste</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-panel { background: rgba(30,41,59,0.85); backdrop-filter: blur(10px); border: 1px solid rgba(148,163,184,0.12); }
+    </style>
+</head>
+<body class="bg-slate-900 min-h-screen flex items-center justify-center text-slate-100">
+
+    <div class="glass-panel w-full max-w-md p-8 rounded-2xl shadow-2xl mx-4 border-t-4 border-green-500">
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold">Create an Account</h2>
+            <p class="text-sm text-slate-400 mt-1">Enter details to register for the Smart Waste system</p>
+        </div>
+
+            <div class="mb-4 bg-green-500 text-white text-sm p-2 rounded">
+                Register account
+            </div>
+        
+        <form id="registerForm" class="space-y-4" action="/register" method="post">
+            <div>
+                <label class="block text-sm text-slate-300 mb-1">Full Name</label>
+                <input type="text" id="name" name="name" required class="w-full py-3 px-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" placeholder="Your full name">
+            </div>
+
+            <div>
+                <label class="block text-sm text-slate-300 mb-1">Email</label>
+                <input type="email" id="email" name="email" required class="w-full py-3 px-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" placeholder="name@example.com">
+            </div>
+
+            <div>
+                <label class="block text-sm text-slate-300 mb-1">Mobile Number</label>
+                <input type="tel" id="mobile" name="mobile" pattern="[0-9+\- ()]{7,}" required class="w-full py-3 px-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" placeholder="e.g. +91 9876543210">
+            </div>
+
+            <div>
+                <label class="block text-sm text-slate-300 mb-1">Select Role</label>
+                <select id="role" name="role" required class="w-full py-3 px-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100">
+                    <option value="">-- Select Role --</option>
+                    <option value="admin">Municipal Admin</option>
+                    <option value="worker">Collection Worker</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm text-slate-300 mb-1">Password</label>
+                <input type="password" id="password1" name="password" required class="w-full py-3 px-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" placeholder="Create a password">
+            </div>
+
+            <div>
+                <label class="block text-sm text-slate-300 mb-1">Confirm Password</label>
+                <input type="password" id="password2" required class="w-full py-3 px-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" placeholder="Confirm password">
+            </div>
+
+            <div class="flex gap-3">
+                <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 py-3 rounded-lg font-bold">Register</button>
+                <a href="/" class="flex-1 text-center bg-slate-700 hover:bg-slate-600 py-3 rounded-lg text-slate-100">Login</a>
+            </div>
+        </form>
+
+        <p class="text-xs text-slate-400 mt-4">Already have an account? <a href="/" class="text-blue-400 underline">Sign in</a></p>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const mobile = document.getElementById('mobile').value.trim();
+            const role = document.getElementById('role').value;
+            const p1 = document.getElementById('password1').value;
+            const p2 = document.getElementById('password2').value;
+
+            if (!name || !email || !mobile || !role || !p1 || !p2) {
+                e.preventDefault();
+                alert('Please fill all fields');
+                return;
+            }
+
+            if (p1 !== p2) {
+                e.preventDefault();
+                alert('Passwords do not match');
+                return;
+            }
+            // Form will submit to backend if all checks pass
+        });
+    </script>
+</body>
+</html>

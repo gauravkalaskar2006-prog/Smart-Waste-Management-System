@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SilentStorm - Worker Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <style>
+        .glass-header { background: rgba(51, 65, 85, 0.95); backdrop-filter: blur(8px); }
+        #workerMap { height: 400px; border-radius: 1rem; border: 1px solid #334155; z-index: 1; }
+        .bin-marker-icon {
+            width: 30px; height: 30px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-weight: bold;
+            color: white; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .critical { background-color: #ef4444; }
+        .warning { background-color: #f59e0b; }
+        .normal { background-color: #10b981; }
+        /* Map Popup Styles */
+        .leaflet-popup-content-wrapper {
+            border-radius: 0.75rem;
+            background-color: #1e293b;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+        }
+        .leaflet-popup-content {
+            margin: 0;
+            font-size: 12px;
+            padding: 4px;
+        }
+        .leaflet-popup-tip {
+            background-color: #1e293b;
+            border-color: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 font-sans text-slate-100 h-screen overflow-y-auto flex flex-col">
+
+    <header class="glass-header border-b border-slate-700 sticky top-0 z-50 shadow-sm">
+        <div class="px-4 py-3 md:px-6 flex items-center justify-between">
+            <div class="w-1/4 flex items-center gap-3">
+                <div class="relative">
+                    <img src="https://ui-avatars.com/api/?name=Worker&background=22c55e&color=fff" class="w-10 h-10 rounded-full border-2 border-slate-600">
+                </div>
+                <div class="hidden sm:block">
+                    <p class="text-sm font-bold text-slate-100">{{ user.name if user else 'Worker' }}</p>
+                    <p class="text-[10px] text-slate-400 uppercase font-semibold border border-slate-600 px-1 rounded inline-block mt-0.5">Zone {{ user.zone if user else '1' }}</p>
+                </div>
+            </div>
+            <div class="w-2/4 text-center">
+                <h1 class="text-lg md:text-2xl font-extrabold text-white tracking-tight uppercase">MUNICIPAL CORPORATION</h1>
+                <p class="text-[10px] md:text-xs text-green-400 font-bold tracking-widest uppercase mt-0.5">Field Worker Portal</p>
+            </div>
+            <div class="w-1/4 flex justify-end items-center gap-4">
+                <div class="hidden lg:block text-xs text-slate-300">Welcome, {{ user.name if user else 'Worker' }}</div>
+                <a href="/logout" class="text-red-400 text-sm font-bold hover:text-red-300 transition">
+                    <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline ml-2">Log Out</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl mx-auto w-full p-4 md:p-6 space-y-6">
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <a href="/bins?zone={{ user.zone if user and user.zone else '1' }}" class="bg-slate-800 border border-slate-700 p-4 rounded-2xl flex items-center gap-4 text-left group hover:border-blue-500 transition cursor-pointer">
+                <div class="w-12 h-12 rounded-full bg-blue-900 text-blue-400 flex items-center justify-center text-xl group-hover:scale-110 transition shrink-0"><i class="fa-solid fa-dumpster"></i></div>
+                <div>
+                    <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Total Bins</p>
+                    <p id="totalBinsCount" class="text-xl sm:text-2xl font-extrabold text-slate-100">0</p>
+                </div>
+            </a>
+            <a href="/bins?zone={{ user.zone if user and user.zone else '1' }}&type=full" class="bg-slate-800 border border-slate-700 p-4 rounded-2xl flex items-center gap-4 relative overflow-hidden text-left group hover:border-red-500 transition cursor-pointer">
+                <div class="absolute top-0 right-0 w-1.5 h-full bg-red-500"></div>
+                <div class="w-12 h-12 rounded-full bg-red-900 text-red-400 flex items-center justify-center text-xl group-hover:scale-110 transition shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div>
+                    <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Full Bins</p>
+                    <p id="fullBinsCount" class="text-xl sm:text-2xl font-extrabold text-red-400">0</p>
+                </div>
+            </a>
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-2xl flex items-center gap-4 text-left group cursor-pointer hover:border-orange-500 transition" onclick="document.getElementById('complaintsSection').scrollIntoView({behavior:'smooth'})">
+                <div class="w-12 h-12 rounded-full bg-orange-900 text-orange-400 flex items-center justify-center text-xl relative group-hover:scale-110 transition shrink-0">
+                    <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-slate-800 rounded-full animate-ping hidden" id="complaintDot"></span>
+                    <i class="fa-solid fa-mobile-screen"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">QR Complaints</p>
+                    <p id="qrComplaintCount" class="text-xl sm:text-2xl font-extrabold text-slate-100">0</p>
+                </div>
+            </div>
+            <div class="bg-gradient-to-br from-green-600 to-emerald-800 p-4 rounded-2xl shadow-md text-white flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-chart-pie"></i></div>
+                <div>
+                    <p class="text-[10px] sm:text-xs font-bold text-green-200 uppercase tracking-wider">Performance</p>
+                    <p class="text-xl sm:text-2xl font-extrabold text-white">100%</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Map Card -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex flex-col min-h-[450px]">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-white"><i class="fa-solid fa-map-location-dot text-blue-500 mr-2"></i>My Route Map</h2>
+                    <span class="bg-blue-900 text-blue-300 text-[10px] font-bold px-2 py-1 rounded">Zone {{ user.zone if user else '1' }}</span>
+                </div>
+                <div id="workerMap" class="flex-1 w-full min-h-[350px]"></div>
+            </div>
+
+            <!-- Complaints and Task Card -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl flex flex-col max-h-[500px]" id="complaintsSection">
+                <div class="p-5 border-b border-slate-700 bg-slate-900 rounded-t-2xl flex justify-between items-center">
+                    <h2 class="font-bold text-slate-100 text-lg"><i class="fa-solid fa-clipboard-list text-orange-400 mr-2"></i>Active QR Complaints</h2>
+                    <button onclick="loadComplaints()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-rotate-right"></i></button>
+                </div>
+                <div id="complaintsList" class="p-5 space-y-4 overflow-y-auto flex-1">
+                    <!-- Complaints injected here -->
+                    <div class="text-center text-slate-500 text-sm py-8" id="noComplaintMsg">No active complaints in your zone</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const workerZone = '{{ user.zone if user else "1" }}';
+        let map;
+        const amravatiCenter = [20.9374, 77.7796];
+        
+        let allBins = [
+            { id: 'BIN-A04', location: 'Gandhi Square', zone: '2', severity: 'critical', fill: 98, lat: 20.932, lng: 77.782 },
+            { id: 'BIN-C12', location: 'Main Market', zone: '1', severity: 'critical', fill: 92, lat: 20.935, lng: 77.775 },
+            { id: 'BIN-F09', location: 'Bus Stand', zone: '3', severity: 'warning', fill: 88, lat: 20.945, lng: 77.785 },
+            { id: 'BIN-B03', location: 'Rajapeth Garden', zone: '1', severity: 'normal', fill: 35, lat: 20.930, lng: 77.770 },
+            { id: 'BIN-D07', location: 'Cotton Market', zone: '4', severity: 'warning', fill: 75, lat: 20.905, lng: 77.765 },
+            { id: 'BIN-E01', location: 'Jaistambh Square', zone: '2', severity: 'normal', fill: 20, lat: 20.928, lng: 77.780 },
+            { id: 'BIN-G11', location: 'Shivaji Nagar', zone: '5', severity: 'critical', fill: 95, lat: 20.970, lng: 77.800 },
+            { id: 'BIN-H05', location: 'MIDC Area', zone: '6', severity: 'normal', fill: 50, lat: 20.950, lng: 77.790 },
+            { id: 'BIN-I08', location: 'Hanuman Nagar', zone: '3', severity: 'warning', fill: 70, lat: 20.940, lng: 77.795 },
+            { id: 'BIN-J02', location: 'Morshi Road', zone: '6', severity: 'normal', fill: 40, lat: 20.955, lng: 77.805 }
+        ];
+
+        try {
+            const addedBins = JSON.parse(localStorage.getItem('addedBins')) || [];
+            const removedBins = JSON.parse(localStorage.getItem('removedBins')) || [];
+            addedBins.forEach(bin => {
+                if (bin && bin.id && !allBins.find(b => b.id === bin.id)) {
+                    allBins.push({
+                        id: bin.id, location: bin.location || "Unknown location",
+                        zone: bin.zone ? bin.zone.replace('Zone ', '') : "1",
+                        severity: 'normal', fill: 15,
+                        lat: 20.9374 + (Math.random() * 0.02 - 0.01),
+                        lng: 77.7796 + (Math.random() * 0.02 - 0.01)
+                    });
+                }
+            });
+            allBins = allBins.filter(b => !removedBins.includes(b.id));
+        } catch(e) {}
+
+        let myBins = allBins.filter(b => b.zone === workerZone);
+
+        const centerPoint = [20.9374, 77.7796];
+        const radLines = [
+            { zone: '1', name: 'Zone 1 (Market)', startAngle: 300, endAngle: 360, color: '#3b82f6' },
+            { zone: '2', name: 'Zone 2 (Residential)', startAngle: 0, endAngle: 60, color: '#10b981' },
+            { zone: '3', name: 'Zone 3 (Commercial)', startAngle: 60, endAngle: 120, color: '#f59e0b' },
+            { zone: '4', name: 'Zone 4 (Industrial)', startAngle: 120, endAngle: 180, color: '#ef4444' },
+            { zone: '5', name: 'Zone 5 (Educational)', startAngle: 180, endAngle: 240, color: '#8b5cf6' },
+            { zone: '6', name: 'Zone 6 (Hospital)', startAngle: 240, endAngle: 300, color: '#06b6d4' }
+        ];
+
+        function getPointOnCircle(center, angleDeg, radius) {
+            const angleRad = angleDeg * (Math.PI / 180);
+            return [
+                center[0] + radius * Math.cos(angleRad),
+                center[1] + radius * Math.sin(angleRad)
+            ];
+        }
+
+        function initMap() {
+            map = L.map('workerMap').setView(amravatiCenter, 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            const radius = 0.04;
+            const myZoneInfo = radLines.find(r => r.zone === workerZone) || radLines[0];
+            
+            if (myZoneInfo) {
+                const p1 = getPointOnCircle(centerPoint, myZoneInfo.startAngle, radius);
+                const p2 = getPointOnCircle(centerPoint, myZoneInfo.endAngle, radius);
+                
+                L.polygon([centerPoint, p1, p2], {
+                    color: myZoneInfo.color,
+                    fillColor: myZoneInfo.color,
+                    fillOpacity: 0.2,
+                    weight: 2
+                }).addTo(map);
+            }
+
+            if (myBins.length > 0) {
+                const group = new L.featureGroup();
+                myBins.forEach(bin => {
+                    const severityColor = bin.severity === 'critical' ? '#ef4444' : 
+                                        bin.severity === 'warning' ? '#f59e0b' : '#10b981';
+                    
+                    const marker = L.marker([bin.lat, bin.lng], {
+                        icon: L.divIcon({ className: 'bin-marker-icon ' + bin.severity, 
+                        html: `<div style="background-color: ${severityColor}; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center;">${bin.id.split('-')[1]}</div>` })
+                    }).addTo(map);
+                    
+                    marker.bindPopup(`
+                        <div class="text-center">
+                            <h4 class="font-bold">${bin.id}</h4>
+                            <p class="text-sm">${bin.location}</p>
+                            <p class="text-xs text-gray-600">Zone ${bin.zone}</p>
+                            <p class="text-xs">Fill: ${bin.fill}%</p>
+                            <div class="mt-2 space-y-1">
+                                <button onclick="navigateToBin(${bin.lat}, ${bin.lng}, '${bin.location}')" class="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600">
+                                    <i class="fa-solid fa-route mr-1"></i> Navigate
+                                </button>
+                            </div>
+                        </div>
+                    `);
+                    group.addLayer(marker);
+                });
+                // only fitBounds if there are markers to prevent map crashes
+                if (group.getLayers().length > 0) {
+                    map.fitBounds(group.getBounds().pad(0.2));
+                }
+            }
+        }
+
+        function navigateToBin(lat, lng, location) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    const url = `https://www.google.com/maps/dir/${userLat},${userLng}/${lat},${lng}`;
+                    window.open(url, '_blank');
+                }, function() {
+                    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                    window.open(url, '_blank');
+                });
+            } else {
+                alert('Geolocation is not supported by this browser.');
+            }
+        }
+
+        function loadComplaints() {
+            fetch('/api/complaints')
+            .then(res => res.json())
+            .then(data => {
+                const myComplaints = data.filter(c => c.bin_zone === workerZone && c.status === 'Open');
+                document.getElementById('qrComplaintCount').textContent = myComplaints.length;
+                if(myComplaints.length > 0) document.getElementById('complaintDot').classList.remove('hidden');
+                else document.getElementById('complaintDot').classList.add('hidden');
+
+                const cList = document.getElementById('complaintsList');
+                const noMsg = document.getElementById('noComplaintMsg');
+
+                if (myComplaints.length === 0) {
+                    cList.innerHTML = '';
+                    cList.appendChild(noMsg);
+                    noMsg.style.display = 'block';
+                } else {
+                    noMsg.style.display = 'none';
+                    cList.innerHTML = myComplaints.map(c => `
+                        <div class="bg-slate-700 p-4 rounded-xl border border-orange-500/50 flex flex-col gap-3">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-bold text-slate-100 flex items-center gap-2">
+                                        <i class="fa-solid fa-triangle-exclamation text-yellow-500"></i> ${c.bin_id} OVERFLOW
+                                    </p>
+                                    <p class="text-xs text-slate-400 mt-1">Reported: ${new Date(c.timestamp).toLocaleTimeString()}</p>
+                                </div>
+                                <span class="bg-orange-900 text-orange-400 text-[10px] font-bold px-2 py-1 rounded border border-orange-800">QR COMPLAINT</span>
+                            </div>
+                            <div class="flex gap-2 mt-2">
+                                <button onclick="markCleaned('${c.id}')" class="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded text-xs transition">
+                                    <i class="fa-solid fa-check mr-1"></i> Mark Cleaned
+                                </button>
+                                <button class="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 rounded text-xs transition">
+                                    <i class="fa-solid fa-route mr-1"></i> Route
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            });
+        }
+
+        // Mock function to mark as cleaned (since there's no backend endpoint to update yet)
+        function markCleaned(id) {
+            alert('Marked complaint ' + id + ' as Cleaned!');
+            // To be realistic in UI, let's remove from dom
+            // But since it's just a prototype, full backend sync is usually needed
+            loadComplaints(); 
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('totalBinsCount').innerText = myBins.length;
+            document.getElementById('fullBinsCount').innerText = myBins.filter(b => b.fill > 85).length;
+            initMap();
+            loadComplaints();
+        });
+    </script>
+</body>
+</html>
